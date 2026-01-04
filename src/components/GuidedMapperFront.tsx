@@ -174,10 +174,6 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
         onPointsUpdate(newPoints);
     };
 
-    useEffect(() => {
-        if (zoomLevel === 1) setPanOffset({ x: 0, y: 0 });
-    }, [zoomLevel]);
-
     const panGesture = Gesture.Pan()
         .enabled(zoomLevel > 1)
         .runOnJS(true)
@@ -203,6 +199,48 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
         if (currentStep > 0) setCurrentStep(currentStep - 1);
     };
 
+    const handleZoom = (targetZoom: number) => {
+        if (!containerLayout) {
+            setZoomLevel(targetZoom);
+            return;
+        }
+
+        const currentPoint = points[currentStep];
+        let targetPanX = 0;
+        let targetPanY = 0;
+
+        if (currentPoint && targetZoom > 1) {
+            const cx = containerLayout.width / 2;
+            const cy = containerLayout.height / 2;
+            const dx = currentPoint.x - cx;
+            const dy = currentPoint.y - cy;
+
+            // Equation: Tx = -dx * Scale^2 (see planning for derivation)
+            // But verify: Translate * Scale * Point
+            // S * (dx) + Tx = 0 => Tx = -S * dx?
+            // VISUAL translation is Tx / S ?? NO. in RN 'transform' array:
+            // [{ scale: S }, { translateX: Tx/S }, { translateY: Ty/S }] in my render code?
+            // Code: translateX: panOffset.x / zoomLevel.
+            // Screen Move = panOffset.x / zoomLevel.
+            // We want Screen Move = -dx * zoomLevel (to counteract the zoom expansion of the offset).
+            // -dx * S = Px / S  => Px = -dx * S * S. 
+            // Correct.
+
+            const idealPanX = -dx * targetZoom * targetZoom;
+            const idealPanY = -dy * targetZoom * targetZoom;
+
+            // Clamp locally
+            const maxDx = containerLayout.width * (targetZoom - 1) / 2;
+            const maxDy = containerLayout.height * (targetZoom - 1) / 2;
+
+            targetPanX = Math.max(-maxDx, Math.min(maxDx, idealPanX));
+            targetPanY = Math.max(-maxDy, Math.min(maxDy, idealPanY));
+        }
+
+        setPanOffset({ x: targetPanX, y: targetPanY });
+        setZoomLevel(targetZoom);
+    };
+
     return (
         <View style={styles.container}>
             {/* Header - Transparent Overlay or Minimal */}
@@ -224,11 +262,8 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
             >
                 <GestureDetector gesture={Gesture.Exclusive(
                     Gesture.Tap().numberOfTaps(2).onEnd((e) => {
-                        runOnJS(setZoomLevel)((prev) => {
-                            const newZoom = prev >= 4 ? 1 : prev * 2;
-                            if (newZoom === 1) runOnJS(setPanOffset)({ x: 0, y: 0 });
-                            return newZoom;
-                        });
+                        const newZoom = zoomLevel >= 4 ? 1 : zoomLevel * 2;
+                        runOnJS(handleZoom)(newZoom);
                     }),
                     panGesture
                 )}>
@@ -260,7 +295,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                                                 initialX={p.x}
                                                 initialY={p.y}
                                                 color={isCurrent ? '#00D4FF' : 'rgba(255,255,255,0.4)'}
-                                                size={isCurrent ? (8 / zoomLevel) : (4 / zoomLevel)}
+                                                size={isCurrent ? 8 : 4}
                                                 onDragEnd={isCurrent ? handleDragEnd : undefined}
                                                 enabled={isCurrent}
                                                 scaleFactor={zoomLevel}
@@ -288,7 +323,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                     </View>
                 )}
 
-               {!helperVisible && (
+                {!helperVisible && (
                     <Pressable style={styles.showHelpButton} onPress={() => setHelperVisible(true)}>
                         <Text style={styles.showHelpText}>Show Target</Text>
                     </Pressable>
@@ -299,7 +334,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                         <Pressable
                             key={z}
                             style={[styles.zoomButton, zoomLevel === z && styles.activeZoom]}
-                            onPress={() => setZoomLevel(z)}
+                            onPress={() => handleZoom(z)}
                         >
                             <Text style={[styles.zoomText, zoomLevel === z && styles.activeZoomText]}>{z}x</Text>
                         </Pressable>

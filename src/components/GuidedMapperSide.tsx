@@ -206,6 +206,40 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
         if (currentStep > 0) setCurrentStep(currentStep - 1);
     };
 
+    const handleZoom = (targetZoom: number) => {
+        if (!containerLayout) {
+            setZoomLevel(targetZoom);
+            return;
+        }
+
+        const currentPoint = points[currentStep];
+        let targetPanX = 0;
+        let targetPanY = 0;
+
+        if (currentPoint && targetZoom > 1) {
+            const cx = containerLayout.width / 2;
+            const cy = containerLayout.height / 2;
+            const dx = currentPoint.x - cx;
+            const dy = currentPoint.y - cy;
+
+            // Logic: Tx = -dx * Z^2
+            const idealPanX = -dx * targetZoom * targetZoom;
+            const idealPanY = -dy * targetZoom * targetZoom;
+
+            // Clamp
+            const maxDx = containerLayout.width * (targetZoom - 1) / 2;
+            const maxDy = containerLayout.height * (targetZoom - 1) / 2;
+
+            targetPanX = Math.max(-maxDx, Math.min(maxDx, idealPanX));
+            targetPanY = Math.max(-maxDy, Math.min(maxDy, idealPanY));
+        }
+
+        // Animate to target
+        translationX.value = withSpring(targetPanX);
+        translationY.value = withSpring(targetPanY);
+        setZoomLevel(targetZoom);
+    };
+
     const animatedImageStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: withSpring(zoomLevel) },
@@ -235,14 +269,8 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
             >
                 <GestureDetector gesture={Gesture.Exclusive(
                     Gesture.Tap().numberOfTaps(2).onEnd((e) => {
-                        runOnJS(setZoomLevel)((prev) => {
-                            const newZoom = prev >= 4 ? 1 : prev * 2;
-                            if (newZoom === 1) {
-                                translationX.value = withSpring(0);
-                                translationY.value = withSpring(0);
-                            }
-                            return newZoom;
-                        });
+                        const newZoom = zoomLevel >= 4 ? 1 : zoomLevel * 2;
+                        runOnJS(handleZoom)(newZoom);
                     }),
                     panGesture
                 )}>
@@ -268,7 +296,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
                                                 initialX={p.x}
                                                 initialY={p.y}
                                                 color={isCurrent ? '#00D4FF' : 'rgba(255,255,255,0.4)'}
-                                                size={isCurrent ? (8 / zoomLevel) : (4 / zoomLevel)}
+                                                size={isCurrent ? 8 : 4}
                                                 onDragEnd={isCurrent ? handleDragEnd : undefined}
                                                 enabled={isCurrent}
                                                 scaleFactor={zoomLevel}
@@ -308,7 +336,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
                         <Pressable
                             key={z}
                             style={[styles.zoomButton, zoomLevel === z && styles.activeZoom]}
-                            onPress={() => setZoomLevel(z)}
+                            onPress={() => handleZoom(z)}
                         >
                             <Text style={[styles.zoomText, zoomLevel === z && styles.activeZoomText]}>{z}x</Text>
                         </Pressable>
