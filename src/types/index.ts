@@ -8,11 +8,11 @@ export interface Point {
 export interface Metric {
     id: string;
     name: string;
-    value: number; 
-    score: number; 
-    tier: string;  
+    value: number;
+    score: number;
+    tier: string;
     idealRange: [number, number];
-    category: 'Harmony' | 'Dimorphism' | 'Angularity' | 'SoftTissue';
+    category: 'Harmony' | 'Dimorphism' | 'Angularity' | 'Feature';
 }
 
 export interface ScoreReport {
@@ -21,9 +21,9 @@ export interface ScoreReport {
         harmony: number;
         dimorphism: number;
         angularity: number;
-        softTissue: number;
+        feature: number;
     };
     metrics: Metric[];
 }
 
-export type Pillar = 'Harmony' | 'Dimorphism' | 'Angularity' | 'SoftTissue';
+export type Pillar = 'Harmony' | 'Dimorphism' | 'Angularity' | 'Feature';

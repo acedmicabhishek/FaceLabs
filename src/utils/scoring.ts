@@ -1,147 +1,34 @@
-import { Metric, Pillar, ScoreReport } from '../types';
+import { Metric, Pillar, ScoreReport, Point } from '../types';
+import { calculateAngle, calculateAngleBetweenLines, calculateDistance } from './geometry';
+import { IDEAL_RANGES_MALE } from './scoring_male';
+import { IDEAL_RANGES_FEMALE } from './scoring_female';
 
-interface IdealRangeDef {
-    id: string;
-    name: string;
-    min: number;
-    max: number;
-    penaltyPerUnit: number; 
-    tier: Pillar;
-    maxScore: number; 
-}
+export const calculateMetricScore = (metricId: string, value: number, gender: 'male' | 'female'): Metric => {
+    const ranges = gender === 'female' ? IDEAL_RANGES_FEMALE : IDEAL_RANGES_MALE;
+    const def = ranges[metricId];
 
-
-export const IDEAL_RANGES: Record<string, IdealRangeDef> = {
-    
-    gonial_angle: {
-        id: 'gonial_angle',
-        name: 'Gonial Angle',
-        min: 113,
-        max: 125,
-        penaltyPerUnit: 2.5,
-        tier: 'Angularity',
-        maxScore: 100
-    },
-    ramus_mandible: {
-        id: 'ramus_mandible',
-        name: 'Ramus to Mandible Ratio',
-        min: 0.6,
-        max: 0.71,
-        penaltyPerUnit: 50, 
-        tier: 'Angularity',
-        maxScore: 100
-    },
-    
-    nasolabial_angle: {
-        id: 'nasolabial_angle',
-        name: 'Nasolabial Angle',
-        min: 94,
-        max: 117.5,
-        penaltyPerUnit: 2, 
-        tier: 'SoftTissue',
-        maxScore: 100
-    },
-    mentolabial: {
-        id: 'mentolabial',
-        name: 'Mentolabial Angle',
-        min: 108,
-        max: 130,
-        penaltyPerUnit: 1, 
-        tier: 'SoftTissue',
-        maxScore: 100
-    },
-    submental_cervical: {
-        id: 'submental_cervical',
-        name: 'Submental Cervical Angle',
-        min: 92,
-        max: 110,
-        penaltyPerUnit: 3, 
-        tier: 'SoftTissue',
-        maxScore: 100
-    },
-    
-    facial_convexity: {
-        id: 'facial_convexity',
-        name: 'Facial Convexity',
-        min: 168.6,
-        max: 176,
-        penaltyPerUnit: 2.5, 
-        tier: 'Harmony',
-        maxScore: 100
-    },
-    
-    nasofrontal: {
-        id: 'nasofrontal',
-        name: 'Nasofrontal Angle',
-        min: 106,
-        max: 130,
-        penaltyPerUnit: 2, 
-        tier: 'Dimorphism',
-        maxScore: 100
-    },
-
-    
-    fwhr: {
-        id: 'fwhr',
-        name: 'Face Width-to-Height',
-        min: 1.8,
-        max: 2.1,
-        penaltyPerUnit: 20, 
-        tier: 'Dimorphism',
-        maxScore: 100
-    },
-    jaw_frontal: {
-        id: 'jaw_frontal',
-        name: 'Jaw Frontal Angle',
-        min: 83,
-        max: 95,
-        penaltyPerUnit: 2,
-        tier: 'Dimorphism',
-        maxScore: 100
-    },
-    
-    canthal_tilt: {
-        id: 'canthal_tilt',
-        name: 'Canthal Tilt',
-        min: 5,
-        max: 8.5,
-        penaltyPerUnit: 5, 
-        tier: 'Harmony',
-        maxScore: 100
-    },
-    esr: {
-        id: 'esr',
-        name: 'Eye Spacing Ratio',
-        min: 0.46,
-        max: 0.50,
-        penaltyPerUnit: 100, 
-        tier: 'Harmony',
-        maxScore: 100
-    },
-    chin_philtrum: {
-        id: 'chin_philtrum',
-        name: 'Chin-to-Philtrum Ratio',
-        min: 2.0,
-        max: 2.5,
-        penaltyPerUnit: 10,
-        tier: 'Harmony',
-        maxScore: 100
-    },
-    midface_ratio: {
-        id: 'midface_ratio',
-        name: 'Midface Ratio',
-        min: 0.95,
-        max: 1.05,
-        penaltyPerUnit: 40,
-        tier: 'Harmony',
-        maxScore: 100
-    }
-};
-
-export const calculateMetricScore = (metricId: string, value: number): Metric => {
-    const def = IDEAL_RANGES[metricId];
     if (!def) {
-        throw new Error(`Metric ID ${metricId} not found in database`);
+        return {
+            id: metricId,
+            name: metricId,
+            value,
+            score: 0,
+            tier: 'N/A',
+            idealRange: [0, 0],
+            category: 'Harmony'
+        };
+    }
+
+    if (isNaN(value) || !isFinite(value)) {
+        return {
+            id: def.id,
+            name: def.name,
+            value: NaN,
+            score: 0,
+            tier: 'N/A',
+            idealRange: [def.min, def.max],
+            category: def.tier
+        };
     }
 
     let deviation = 0;
@@ -180,29 +67,34 @@ export const generateReport = (metrics: Metric[]): ScoreReport => {
         Harmony: { total: 0, count: 0 },
         Dimorphism: { total: 0, count: 0 },
         Angularity: { total: 0, count: 0 },
-        SoftTissue: { total: 0, count: 0 }
+        Feature: { total: 0, count: 0 }
     };
 
-    
+
     metrics.forEach(m => {
-        pillars[m.category].total += m.score;
-        pillars[m.category].count += 1;
+        if (!isNaN(m.score)) {
+            pillars[m.category].total += m.score;
+            pillars[m.category].count += 1;
+        }
     });
 
-    const getAvg = (p: Pillar) => pillars[p].count > 0 ? pillars[p].total / pillars[p].count : 0;
+    const getAvg = (p: Pillar, defaultVal: number) => pillars[p].count > 0 ? pillars[p].total / pillars[p].count : defaultVal;
 
-    const harmonyScore = getAvg('Harmony');
-    const dimorphismScore = getAvg('Dimorphism');
-    const angularityScore = getAvg('Angularity');
-    const softTissueScore = getAvg('SoftTissue');
+    // Calculate Averages. Default to 50 (Average) if missing, except Feature which defaults to 80 (Neutral/Good) as per user request.
+    const harmonyScore = getAvg('Harmony', 50);
+    const dimorphismScore = getAvg('Dimorphism', 50);
+    const angularityScore = getAvg('Angularity', 50);
+    // User requested: "misc cant be measured mathmatically so we will set it to nutral"
+    // Setting Feature (Misc) default to 80 (Neutral/Good Tier 3) improves the baseline if no soft tissue metrics are present.
+    const featureScore = getAvg('Feature', 80);
 
-    
-    
+    // Geometric Weighted Formula:
+    // (Harmony^0.3) * (Dimorphism^0.2) * (Angularity^0.2) * (Feature^0.3)
     const totalScore =
-        (harmonyScore * 0.30) +
-        (dimorphismScore * 0.30) +
-        (angularityScore * 0.25) +
-        (softTissueScore * 0.15);
+        Math.pow(harmonyScore, 0.3) *
+        Math.pow(dimorphismScore, 0.2) *
+        Math.pow(angularityScore, 0.2) *
+        Math.pow(featureScore, 0.3);
 
     return {
         totalScore: Math.round(totalScore),
@@ -210,8 +102,164 @@ export const generateReport = (metrics: Metric[]): ScoreReport => {
             harmony: Math.round(harmonyScore),
             dimorphism: Math.round(dimorphismScore),
             angularity: Math.round(angularityScore),
-            softTissue: Math.round(softTissueScore)
+            feature: Math.round(featureScore)
         },
         metrics
     };
+};
+
+// --- HELPER ---
+const getPoint = (points: Point[], id: number): Point | undefined => {
+    return points.find(p => p.id === id);
+};
+
+// --- COMPUTATION ---
+export const calculateAllMetrics = (points: Point[], profileType: 'front' | 'side'): ScoreReport => {
+    const metrics: Metric[] = [];
+
+    if (profileType === 'side') {
+        const pIntertragicNotch = getPoint(points, 8); // Intertragic Notch (Ar approx)
+        const pGonionTop = getPoint(points, 30);      // Gonion Top
+        const pGonionBottom = getPoint(points, 31);   // Gonion Bottom
+        const pMenton = getPoint(points, 28);         // Menton
+        const pCervical = getPoint(points, 29);       // Cervical
+        const pNeck = getPoint(points, 4);            // Neck Point
+
+        const pColumella = getPoint(points, 20);
+        const pSubnasale = getPoint(points, 21);
+        const pLabraleSup = getPoint(points, 23);
+
+        const pGlabella = getPoint(points, 14);
+        const pNasion = getPoint(points, 16);
+        const pRhinion = getPoint(points, 17);
+        const pPogonion = getPoint(points, 27);
+
+        const pLabraleInf = getPoint(points, 25);
+        const pSublabiale = getPoint(points, 26);
+
+
+        // 1. Gonial Angle (Ramus vs Body)
+        if (pIntertragicNotch && pGonionTop && pGonionBottom && pMenton) {
+            const angleRaw = calculateAngleBetweenLines(
+                pIntertragicNotch, pGonionTop, // Line 1: Ar -> Go (Down)
+                pGonionBottom, pMenton         // Line 2: Go -> Me (Forward)
+            );
+            metrics.push(calculateMetricScore('gonial_angle', 180 - angleRaw));
+        } else metrics.push(calculateMetricScore('gonial_angle', NaN));
+
+        // 2. Ramus/Mandible Ratio
+        if (pIntertragicNotch && pGonionTop && pGonionBottom && pMenton) {
+            const ramusLen = calculateDistance(pIntertragicNotch, pGonionTop);
+            const bodyLen = calculateDistance(pGonionBottom, pMenton);
+            metrics.push(calculateMetricScore('ramus_to_mandible', ramusLen / bodyLen));
+        } else metrics.push(calculateMetricScore('ramus_to_mandible', NaN));
+
+        // 3. Nasolabial Angle (Col-Sn-Ls)
+        if (pColumella && pSubnasale && pLabraleSup) {
+            const angle = calculateAngle(pColumella, pSubnasale, pLabraleSup);
+            metrics.push(calculateMetricScore('nasolabial_angle', angle));
+        } else metrics.push(calculateMetricScore('nasolabial_angle', NaN));
+
+        // 4. Nasofrontal Angle (G-N-Rh)
+        if (pGlabella && pNasion && pRhinion) {
+            const angle = calculateAngle(pGlabella, pNasion, pRhinion);
+            metrics.push(calculateMetricScore('nasofrontal_angle', angle));
+        } else metrics.push(calculateMetricScore('nasofrontal_angle', NaN));
+
+        // 5. Facial Convexity (G-Sn-Pg)
+        if (pGlabella && pSubnasale && pPogonion) {
+            const angle = calculateAngle(pGlabella, pSubnasale, pPogonion);
+            metrics.push(calculateMetricScore('facial_convexity', angle));
+        } else metrics.push(calculateMetricScore('facial_convexity', NaN));
+
+        // 6. Mentolabial Angle (Li-Sl-Pg)
+        if (pLabraleInf && pSublabiale && pPogonion) {
+            const angle = calculateAngle(pLabraleInf, pSublabiale, pPogonion);
+            metrics.push(calculateMetricScore('mentolabial_angle', angle));
+        } else metrics.push(calculateMetricScore('mentolabial_angle', NaN));
+
+        // 7. Submental Cervical (Me-Cervical-Neck)
+        if (pMenton && pCervical && pNeck) {
+            const angle = calculateAngle(pMenton, pCervical, pNeck);
+            metrics.push(calculateMetricScore('submental_cervical', angle));
+        } else metrics.push(calculateMetricScore('submental_cervical', NaN));
+
+
+    } else {
+        // --- FRONT PROFILE ---
+        const pLeftPupil = getPoint(points, 2);
+        const pRightPupil = getPoint(points, 3);
+        const pCheekLeft = getPoint(points, 51);
+        const pCheekRight = getPoint(points, 52);
+
+        const pBrowLeft = getPoint(points, 18); // Left Brow Inner
+        const pBrowRight = getPoint(points, 29); // Right Brow Inner
+        const pCupidsBow = getPoint(points, 40);
+
+        const pCanthusLeftIn = getPoint(points, 12);
+        const pCanthusLeftOut = getPoint(points, 13);
+        const pCanthusRightIn = getPoint(points, 23);
+        const pCanthusRightOut = getPoint(points, 24);
+
+        const pChinBottom = getPoint(points, 7);
+        const pLowerLip = getPoint(points, 6);
+        const pNoseBottom = getPoint(points, 35);
+
+        const pJawLeft = getPoint(points, 45); // Left Bottom Gonion
+        const pJawRight = getPoint(points, 46); // Right Bottom Gonion
+        const pChinLeft = getPoint(points, 47);
+        const pChinRight = getPoint(points, 48);
+
+        // 1. ESR (IPD / Bizygomatic)
+        if (pLeftPupil && pRightPupil && pCheekLeft && pCheekRight) {
+            const ipd = calculateDistance(pLeftPupil, pRightPupil);
+            const bizygo = calculateDistance(pCheekLeft, pCheekRight);
+            metrics.push(calculateMetricScore('esr', ipd / bizygo));
+        } else metrics.push(calculateMetricScore('esr', NaN));
+
+        // 2. fWHR (Bizygomatic / UpperFace)
+        if (pCheekLeft && pCheekRight && pBrowLeft && pBrowRight && pCupidsBow) {
+            const bizygo = calculateDistance(pCheekLeft, pCheekRight);
+            const midBrowY = (pBrowLeft.y + pBrowRight.y) / 2;
+            const height = Math.abs(pCupidsBow.y - midBrowY);
+            metrics.push(calculateMetricScore('fwhr', bizygo / height));
+        } else metrics.push(calculateMetricScore('fwhr', NaN));
+
+        // 3. Midface Ratio (IPD / Midface Height)
+        if (pLeftPupil && pRightPupil && pCupidsBow) {
+            const ipd = calculateDistance(pLeftPupil, pRightPupil);
+            const midPupilY = (pLeftPupil.y + pRightPupil.y) / 2;
+            const midfaceHeight = Math.abs(pCupidsBow.y - midPupilY);
+            metrics.push(calculateMetricScore('midface_ratio', midfaceHeight / ipd));
+        } else metrics.push(calculateMetricScore('midface_ratio', NaN));
+
+        // 4. Canthal Tilt
+        if (pCanthusLeftIn && pCanthusLeftOut && pCanthusRightIn && pCanthusRightOut) {
+            const getTilt = (pIn: Point, pOut: Point) => {
+                const dy = pOut.y - pIn.y;
+                const dx = pOut.x - pIn.x;
+                return -Math.atan2(dy, dx) * (180 / Math.PI);
+            }
+            const tiltL = getTilt(pCanthusLeftIn, pCanthusLeftOut);
+            const tiltR = getTilt(pCanthusRightIn, pCanthusRightOut);
+            metrics.push(calculateMetricScore('canthal_tilt', (tiltL + tiltR) / 2));
+        } else metrics.push(calculateMetricScore('canthal_tilt', NaN));
+
+        // 5. Chin/Philtrum
+        if (pChinBottom && pLowerLip && pNoseBottom && pCupidsBow) {
+            const chinHeight = calculateDistance(pLowerLip, pChinBottom);
+            const philtrumLen = calculateDistance(pNoseBottom, pCupidsBow);
+            metrics.push(calculateMetricScore('chin_philtrum', chinHeight / philtrumLen));
+        } else metrics.push(calculateMetricScore('chin_philtrum', NaN));
+
+        // 6. Jaw Frontal Angle
+        if (pJawLeft && pChinLeft) {
+            const dx = pChinLeft.x - pJawLeft.x;
+            const dy = pChinLeft.y - pJawLeft.y;
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            metrics.push(calculateMetricScore('jaw_frontal', angle));
+        } else metrics.push(calculateMetricScore('jaw_frontal', NaN));
+    }
+
+    return generateReport(metrics);
 };

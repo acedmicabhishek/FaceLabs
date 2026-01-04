@@ -1,19 +1,28 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Stack } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-
-
-const MOCK_REPORT = {
-    totalScore: 87,
-    subScores: {
-        Harmony: 82,
-        Dimorphism: 91,
-        Angularity: 88,
-        SoftTissue: 75,
-    }
-};
+import { ScoreReport } from '../src/types';
 
 export default function ResultScreen() {
+    const params = useLocalSearchParams();
+
+    let report: ScoreReport | null = null;
+    if (params.report) {
+        try {
+            report = JSON.parse(params.report as string);
+        } catch (e) {
+            console.error("Failed to parse report", e);
+        }
+    }
+
+    if (!report) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#fff' }}>No Analysis Data Found</Text>
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
             {/* Score Header */}
@@ -22,15 +31,17 @@ export default function ResultScreen() {
                 style={styles.scoreHeader}
             >
                 <Text style={styles.scoreLabel}>FACE SCORE</Text>
-                <Text style={styles.scoreValue}>{MOCK_REPORT.totalScore}</Text>
-                <Text style={styles.scoreTier}>TIER 2 (Model)</Text>
+                <Text style={styles.scoreValue}>{report.totalScore}</Text>
+                <Text style={styles.scoreTier}>
+                    {report.totalScore >= 85 ? 'TIER 1/2' : report.totalScore >= 70 ? 'TIER 3' : 'TIER 4+'}
+                </Text>
             </LinearGradient>
 
             {/* Pillars Breakdown */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Pillar Breakdown</Text>
 
-                {Object.entries(MOCK_REPORT.subScores).map(([key, value]) => (
+                {Object.entries(report.subScores).map(([key, value]) => (
                     <View key={key} style={styles.statRow}>
                         <View style={styles.statLabelContainer}>
                             <Text style={styles.statLabel}>{key}</Text>
@@ -43,20 +54,35 @@ export default function ResultScreen() {
                 ))}
             </View>
 
-            {/* Detailed Metrics Placeholder */}
+            {/* Detailed Metrics */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Detailed Analysis</Text>
-                <View style={styles.metricCard}>
-                    <Text style={styles.metricName}>Gonial Angle</Text>
-                    <Text style={styles.metricValue}>118.5°</Text>
-                    <Text style={styles.metricIdeal}>Ideal: 113° - 125°</Text>
-                </View>
 
-                <View style={styles.metricCard}>
-                    <Text style={styles.metricName}>Ramus/Mandible</Text>
-                    <Text style={styles.metricValue}>0.65</Text>
-                    <Text style={styles.metricIdeal}>Ideal: 0.6 - 0.71</Text>
-                </View>
+                {report.metrics.map((m) => (
+                    <View key={m.id} style={styles.metricCard}>
+                        <Text style={styles.metricName}>{m.name}</Text>
+                        <Text style={[
+                            styles.metricValue,
+                            isNaN(m.value) ? { color: '#ff4444' } : {}
+                        ]}>
+                            {isNaN(m.value) ? 'No Calc' : `${m.value.toFixed(1)}°`}
+                        </Text>
+
+                        {!isNaN(m.value) && (
+                            <>
+                                <Text style={styles.metricIdeal}>
+                                    Ideal: {m.idealRange[0]} - {m.idealRange[1]}
+                                </Text>
+                                <Text style={[styles.metricIdeal, { color: '#00D4FF' }]}>
+                                    Score: {m.score.toFixed(0)} ({m.tier})
+                                </Text>
+                            </>
+                        )}
+                        {isNaN(m.value) && (
+                            <Text style={styles.metricIdeal}>Insufficient Data</Text>
+                        )}
+                    </View>
+                ))}
             </View>
 
         </ScrollView>

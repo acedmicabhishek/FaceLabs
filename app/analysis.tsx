@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import GuidedMapperFront from '../src/components/GuidedMapperFront';
 import GuidedMapperSide from '../src/components/GuidedMapperSide';
 import { Point } from '../src/types';
+import { calculateAllMetrics } from '../src/utils/scoring';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +14,7 @@ export default function AnalysisScreen() {
     const router = useRouter();
     const [image, setImage] = useState<string | null>(null);
     const [points, setPoints] = useState<Point[]>([]);
+    const [gender, setGender] = useState<'male' | 'female' | null>(null);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -23,16 +25,46 @@ export default function AnalysisScreen() {
 
         if (!result.canceled) {
             setImage(result.assets[0].uri);
-            
             setPoints([]);
         }
     };
 
+
     const handleCalculate = () => {
-        router.push('/result');
+        if (!gender) return;
+        const report = calculateAllMetrics(points, type as 'front' | 'side', gender);
+        router.push({
+            pathname: '/result',
+            params: { report: JSON.stringify(report) }
+        });
     };
 
-    
+    // 1. Gender Selection Step
+    if (!gender) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Select Gender</Text>
+                </View>
+                <View style={styles.selectionContainer}>
+                    <Pressable
+                        style={[styles.genderButton, { borderColor: '#00D4FF' }]}
+                        onPress={() => setGender('male')}
+                    >
+                        <Text style={[styles.genderText, { color: '#00D4FF' }]}>Male</Text>
+                    </Pressable>
+                    <Pressable
+                        style={[styles.genderButton, { borderColor: '#FF00D4', marginTop: 20 }]}
+                        onPress={() => setGender('female')}
+                    >
+                        <Text style={[styles.genderText, { color: '#FF00D4' }]}>Female</Text>
+                    </Pressable>
+                </View>
+            </View>
+        );
+    }
+
+    // 2. Mapper Step (Front)
     if (type === 'front' && image) {
         return (
             <GuidedMapperFront
@@ -44,7 +76,7 @@ export default function AnalysisScreen() {
         );
     }
 
-    
+    // 3. Mapper Step (Side)
     if (type === 'side' && image) {
         return (
             <GuidedMapperSide
@@ -56,13 +88,14 @@ export default function AnalysisScreen() {
         );
     }
 
-    
+
     const title = type === 'front' ? 'Front Profile Analysis' : 'Side Profile Analysis';
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>{title}</Text>
+                <Text style={styles.subtitle}>Gender: {gender.charAt(0).toUpperCase() + gender.slice(1)}</Text>
             </View>
 
             <View style={styles.imageContainer}>
@@ -92,6 +125,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
     },
+    subtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 5,
+    },
     imageContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -110,4 +148,23 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
+    selectionContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    genderButton: {
+        width: '100%',
+        padding: 20,
+        borderRadius: 12,
+        borderWidth: 2,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        alignItems: 'center',
+    },
+    genderText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        letterSpacing: 2,
+    }
 });

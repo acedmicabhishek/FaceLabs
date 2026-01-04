@@ -23,58 +23,58 @@ const Crosshair = ({ x, y }: { x: number, y: number }) => (
 
 
 const FACE_MASK_POSITIONS: { [key: number]: Point } = {
-    1: { x: 0.50, y: 0.20 }, 
-    2: { x: 0.35, y: 0.45 }, 
-    3: { x: 0.65, y: 0.45 }, 
-    4: { x: 0.45, y: 0.58 }, 
-    5: { x: 0.55, y: 0.58 }, 
-    6: { x: 0.50, y: 0.78 }, 
-    7: { x: 0.50, y: 0.90 }, 
-    8: { x: 0.15, y: 0.50 }, 
-    9: { x: 0.85, y: 0.50 }, 
-    10: { x: 0.20, y: 0.35 }, 
-    11: { x: 0.80, y: 0.35 }, 
-    12: { x: 0.40, y: 0.45 }, 
-    13: { x: 0.30, y: 0.45 }, 
-    14: { x: 0.35, y: 0.42 }, 
-    15: { x: 0.35, y: 0.48 }, 
-    16: { x: 0.28, y: 0.42 }, 
-    17: { x: 0.42, y: 0.38 }, 
-    18: { x: 0.40, y: 0.39 }, 
-    19: { x: 0.35, y: 0.35 }, 
-    20: { x: 0.30, y: 0.36 }, 
-    21: { x: 0.25, y: 0.38 }, 
-    22: { x: 0.35, y: 0.40 }, 
-    23: { x: 0.60, y: 0.45 }, 
-    24: { x: 0.70, y: 0.45 }, 
-    25: { x: 0.65, y: 0.42 }, 
-    26: { x: 0.65, y: 0.48 }, 
-    27: { x: 0.72, y: 0.42 }, 
-    28: { x: 0.58, y: 0.38 }, 
-    29: { x: 0.60, y: 0.39 }, 
-    30: { x: 0.65, y: 0.35 }, 
-    31: { x: 0.70, y: 0.36 }, 
-    32: { x: 0.75, y: 0.38 }, 
-    33: { x: 0.65, y: 0.40 }, 
-    34: { x: 0.50, y: 0.55 }, 
-    35: { x: 0.50, y: 0.60 }, 
-    36: { x: 0.46, y: 0.50 }, 
-    37: { x: 0.54, y: 0.50 }, 
-    38: { x: 0.40, y: 0.72 }, 
-    39: { x: 0.60, y: 0.72 }, 
-    40: { x: 0.50, y: 0.70 }, 
-    41: { x: 0.50, y: 0.72 }, 
-    42: { x: 0.50, y: 0.75 }, 
-    43: { x: 0.20, y: 0.65 }, 
-    44: { x: 0.80, y: 0.65 }, 
-    45: { x: 0.22, y: 0.75 }, 
-    46: { x: 0.78, y: 0.75 }, 
-    47: { x: 0.45, y: 0.88 }, 
-    48: { x: 0.55, y: 0.88 }, 
-    49: { x: 0.30, y: 0.85 }, 
-    50: { x: 0.70, y: 0.85 }, 
-    51: { x: 0.30, y: 0.60 }, 
-    52: { x: 0.70, y: 0.60 }, 
+    1: { x: 0.50, y: 0.20 },
+    2: { x: 0.35, y: 0.45 },
+    3: { x: 0.65, y: 0.45 },
+    4: { x: 0.45, y: 0.58 },
+    5: { x: 0.55, y: 0.58 },
+    6: { x: 0.50, y: 0.78 },
+    7: { x: 0.50, y: 0.90 },
+    8: { x: 0.15, y: 0.50 },
+    9: { x: 0.85, y: 0.50 },
+    10: { x: 0.20, y: 0.35 },
+    11: { x: 0.80, y: 0.35 },
+    12: { x: 0.40, y: 0.45 },
+    13: { x: 0.30, y: 0.45 },
+    14: { x: 0.35, y: 0.42 },
+    15: { x: 0.35, y: 0.48 },
+    16: { x: 0.28, y: 0.42 },
+    17: { x: 0.42, y: 0.38 },
+    18: { x: 0.40, y: 0.39 },
+    19: { x: 0.35, y: 0.35 },
+    20: { x: 0.30, y: 0.36 },
+    21: { x: 0.25, y: 0.38 },
+    22: { x: 0.35, y: 0.40 },
+    23: { x: 0.60, y: 0.45 },
+    24: { x: 0.70, y: 0.45 },
+    25: { x: 0.65, y: 0.42 },
+    26: { x: 0.65, y: 0.48 },
+    27: { x: 0.72, y: 0.42 },
+    28: { x: 0.58, y: 0.38 },
+    29: { x: 0.60, y: 0.39 },
+    30: { x: 0.65, y: 0.35 },
+    31: { x: 0.70, y: 0.36 },
+    32: { x: 0.75, y: 0.38 },
+    33: { x: 0.65, y: 0.40 },
+    34: { x: 0.50, y: 0.55 },
+    35: { x: 0.50, y: 0.60 },
+    36: { x: 0.46, y: 0.50 },
+    37: { x: 0.54, y: 0.50 },
+    38: { x: 0.40, y: 0.72 },
+    39: { x: 0.60, y: 0.72 },
+    40: { x: 0.50, y: 0.70 },
+    41: { x: 0.50, y: 0.72 },
+    42: { x: 0.50, y: 0.75 },
+    43: { x: 0.20, y: 0.65 },
+    44: { x: 0.80, y: 0.65 },
+    45: { x: 0.22, y: 0.75 },
+    46: { x: 0.78, y: 0.75 },
+    47: { x: 0.45, y: 0.88 },
+    48: { x: 0.55, y: 0.88 },
+    49: { x: 0.30, y: 0.85 },
+    50: { x: 0.70, y: 0.85 },
+    51: { x: 0.30, y: 0.60 },
+    52: { x: 0.70, y: 0.60 },
 };
 
 export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, onComplete }: GuidedMapperProps) {
@@ -82,13 +82,13 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
     const [helperVisible, setHelperVisible] = useState(true);
     const [layout, setLayout] = useState({ width: 0, height: 0 });
 
-    
+
     const [zoomLevel, setZoomLevel] = useState(1);
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
     const currentLandmark = FRONT_LANDMARKS[currentStep];
 
-    
+
     useEffect(() => {
         if (zoomLevel === 1) {
             setPanOffset({ x: 0, y: 0 });
@@ -101,11 +101,11 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
         .onUpdate((e) => {
             const event = e as any;
             setPanOffset(prev => {
-                
+
                 const newX = prev.x + (event.changeX || 0);
                 const newY = prev.y + (event.changeY || 0);
 
-                
+
                 const maxDx = (layout.width * (zoomLevel - 1)) / 2;
                 const maxDy = (layout.height * (zoomLevel - 1)) / 2;
 
@@ -116,7 +116,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
             });
         });
 
-    
+
     useEffect(() => {
         if (points.length === 0 && layout.width > 0 && layout.height > 0) {
             const maskWidth = Math.min(layout.width * 0.8, 300);
@@ -240,7 +240,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                                                     size={isCurrent ? (15 / zoomLevel) : (8 / zoomLevel)}
                                                     onDragEnd={isCurrent ? handleDragEnd : undefined}
                                                     enabled={isCurrent}
-                                                    scaleFactor={zoomLevel} 
+                                                    scaleFactor={zoomLevel}
                                                 />
                                                 {isCurrent && <Crosshair x={p.x} y={p.y} />}
                                             </React.Fragment>
@@ -258,7 +258,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                             <View style={[
                                 styles.scrollbarHorizontalBack,
                                 {
-                                    width: layout.width - 40, 
+                                    width: layout.width - 40,
                                     left: 20,
                                     bottom: 10
                                 }
@@ -276,7 +276,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                             <View style={[
                                 styles.scrollbarVerticalBack,
                                 {
-                                    height: layout.height - 100, 
+                                    height: layout.height - 100,
                                     right: 10,
                                     top: 50
                                 }
@@ -337,6 +337,10 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
 
                 <Pressable onPress={() => setHelperVisible(!helperVisible)} style={styles.toggleButton}>
                     <Text style={styles.navText}>{helperVisible ? 'Hide Help' : 'Show Help'}</Text>
+                </Pressable>
+
+                <Pressable onPress={onComplete} style={[styles.navButton, { backgroundColor: '#333', borderWidth: 1, borderColor: '#444' }]}>
+                    <Text style={[styles.navText, { color: '#ccc', fontSize: 12 }]}>Report</Text>
                 </Pressable>
 
                 <Pressable onPress={handleNext} style={[styles.navButton, styles.primaryButton]}>
@@ -409,7 +413,7 @@ const styles = StyleSheet.create({
     },
     helperImage: {
         width: '100%',
-        height: 120, 
+        height: 120,
         marginBottom: 10,
         backgroundColor: '#000',
         borderRadius: 8,
@@ -531,7 +535,7 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     scrollbarThumb: {
-        backgroundColor: 'rgba(0, 212, 255, 0.7)', 
+        backgroundColor: 'rgba(0, 212, 255, 0.7)',
         borderRadius: 2,
     },
 });
