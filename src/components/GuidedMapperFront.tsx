@@ -15,8 +15,6 @@ export interface GuidedMapperProps {
 
 const Crosshair = ({ x, y }: { x: number, y: number }) => (
     <View style={[styles.crosshairContainer, { left: x - 50, top: y - 50 }]}>
-        <View style={styles.crosshairVertical} />
-        <View style={styles.crosshairHorizontal} />
         <View style={styles.crosshairCenter} />
     </View>
 );
@@ -237,7 +235,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                                                     initialX={p.x}
                                                     initialY={p.y}
                                                     color={isCurrent ? '#00D4FF' : 'rgba(255,255,255,0.5)'}
-                                                    size={isCurrent ? (15 / zoomLevel) : (8 / zoomLevel)}
+                                                    size={isCurrent ? (8 / zoomLevel) : (4 / zoomLevel)}
                                                     onDragEnd={isCurrent ? handleDragEnd : undefined}
                                                     enabled={isCurrent}
                                                     scaleFactor={zoomLevel}
@@ -472,12 +470,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.5)',
     },
     crosshairCenter: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
+        width: 4,
+        height: 4,
+        borderRadius: 2,
         backgroundColor: '#FF0000',
-        borderWidth: 1,
-        borderColor: '#fff',
+        borderWidth: 0,
     },
     zoomContainer: {
         width: '100%',

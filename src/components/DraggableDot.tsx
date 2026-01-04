@@ -17,13 +17,13 @@ interface DraggableDotProps {
     onDragEnd?: (x: number, y: number) => void;
     label?: string;
     enabled?: boolean;
-    scaleFactor?: number; 
+    scaleFactor?: number;
 }
 
 const DraggableDot: React.FC<DraggableDotProps> = ({
     initialX,
     initialY,
-    color = '#00D4FF', 
+    color = '#00D4FF',
     size = 20,
     onDragEnd,
     enabled = true,
@@ -33,7 +33,7 @@ const DraggableDot: React.FC<DraggableDotProps> = ({
     const y = useSharedValue(initialY);
     const scale = useSharedValue(1);
 
-    
+
     React.useEffect(() => {
         x.value = initialX;
         y.value = initialY;
@@ -43,29 +43,29 @@ const DraggableDot: React.FC<DraggableDotProps> = ({
         .enabled(enabled)
         .onStart(() => {
             scale.value = withSpring(1.5);
-            
-            
-            
 
-            
-            
-            
-            
-            
-            
 
-            
-            
+
+
+
+
+
+
+
+
+
+
+
         })
         .onUpdate((event) => {
-            
+
             const e = event as any;
             if (e.changeX !== undefined) {
                 x.value += e.changeX / scaleFactor;
                 y.value += e.changeY / scaleFactor;
             } else {
-                
-                
+
+
             }
         })
         .onEnd(() => {
@@ -94,8 +94,6 @@ const DraggableDot: React.FC<DraggableDotProps> = ({
                         cy={size / 2}
                         r={size / 2}
                         fill={color}
-                        stroke="white"
-                        strokeWidth={2}
                     />
                 </Svg>
             </Animated.View>
@@ -110,7 +108,7 @@ const styles = StyleSheet.create({
         left: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        
+
         zIndex: 100,
     },
 });

@@ -15,45 +15,43 @@ export interface GuidedMapperProps {
 
 const Crosshair = ({ x, y }: { x: number, y: number }) => (
     <View style={[styles.crosshairContainer, { left: x - 50, top: y - 50 }]}>
-        <View style={styles.crosshairVertical} />
-        <View style={styles.crosshairHorizontal} />
         <View style={styles.crosshairCenter} />
     </View>
 );
 
 
 const SIDE_MASK_POSITIONS: { [key: number]: Point } = {
-    1: { x: 0.50, y: 0.15 }, 
-    2: { x: 0.85, y: 0.40 }, 
-    3: { x: 0.10, y: 0.50 }, 
-    4: { x: 0.50, y: 0.85 }, 
-    5: { x: 0.60, y: 0.48 }, 
-    6: { x: 0.35, y: 0.48 }, 
-    7: { x: 0.62, y: 0.48 }, 
-    8: { x: 0.62, y: 0.52 }, 
-    9: { x: 0.28, y: 0.45 }, 
-    10: { x: 0.45, y: 0.55 }, 
-    11: { x: 0.35, y: 0.45 }, 
-    12: { x: 0.35, y: 0.48 }, 
-    13: { x: 0.45, y: 0.20 }, 
-    14: { x: 0.25, y: 0.35 }, 
-    15: { x: 0.40, y: 0.30 }, 
-    16: { x: 0.22, y: 0.38 }, 
-    17: { x: 0.15, y: 0.45 }, 
-    18: { x: 0.12, y: 0.48 }, 
-    19: { x: 0.12, y: 0.52 }, 
-    20: { x: 0.18, y: 0.55 }, 
-    21: { x: 0.22, y: 0.58 }, 
-    22: { x: 0.25, y: 0.55 }, 
-    23: { x: 0.20, y: 0.62 }, 
-    24: { x: 0.35, y: 0.65 }, 
-    25: { x: 0.20, y: 0.68 }, 
-    26: { x: 0.22, y: 0.72 }, 
-    27: { x: 0.20, y: 0.80 }, 
-    28: { x: 0.25, y: 0.85 }, 
-    29: { x: 0.55, y: 0.80 }, 
-    30: { x: 0.70, y: 0.70 }, 
-    31: { x: 0.72, y: 0.75 }, 
+    1: { x: 0.50, y: 0.15 },
+    2: { x: 0.85, y: 0.40 },
+    3: { x: 0.10, y: 0.50 },
+    4: { x: 0.50, y: 0.85 },
+    5: { x: 0.60, y: 0.48 },
+    6: { x: 0.35, y: 0.48 },
+    7: { x: 0.62, y: 0.48 },
+    8: { x: 0.62, y: 0.52 },
+    9: { x: 0.28, y: 0.45 },
+    10: { x: 0.45, y: 0.55 },
+    11: { x: 0.35, y: 0.45 },
+    12: { x: 0.35, y: 0.48 },
+    13: { x: 0.45, y: 0.20 },
+    14: { x: 0.25, y: 0.35 },
+    15: { x: 0.40, y: 0.30 },
+    16: { x: 0.22, y: 0.38 },
+    17: { x: 0.15, y: 0.45 },
+    18: { x: 0.12, y: 0.48 },
+    19: { x: 0.12, y: 0.52 },
+    20: { x: 0.18, y: 0.55 },
+    21: { x: 0.22, y: 0.58 },
+    22: { x: 0.25, y: 0.55 },
+    23: { x: 0.20, y: 0.62 },
+    24: { x: 0.35, y: 0.65 },
+    25: { x: 0.20, y: 0.68 },
+    26: { x: 0.22, y: 0.72 },
+    27: { x: 0.20, y: 0.80 },
+    28: { x: 0.25, y: 0.85 },
+    29: { x: 0.55, y: 0.80 },
+    30: { x: 0.70, y: 0.70 },
+    31: { x: 0.72, y: 0.75 },
 };
 
 export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onComplete }: GuidedMapperProps) {
@@ -61,10 +59,10 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
     const [helperVisible, setHelperVisible] = useState(true);
     const [layout, setLayout] = useState({ width: 0, height: 0 });
 
-    
+
     const [zoomLevel, setZoomLevel] = useState(1);
 
-    
+
     const translationX = useSharedValue(0);
     const translationY = useSharedValue(0);
     const savedTranslationX = useSharedValue(0);
@@ -72,7 +70,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
 
     const currentLandmark = SIDE_LANDMARKS[currentStep];
 
-    
+
     useEffect(() => {
         if (zoomLevel === 1) {
             translationX.value = withSpring(0);
@@ -92,7 +90,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
             let nextX = savedTranslationX.value + e.translationX;
             let nextY = savedTranslationY.value + e.translationY;
 
-            
+
             if (zoomLevel > 1) {
                 const maxDx = (layout.width * (zoomLevel - 1)) / 2;
                 const maxDy = (layout.height * (zoomLevel - 1)) / 2;
@@ -107,7 +105,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
             translationY.value = nextY;
         });
 
-    
+
     useEffect(() => {
         if (points.length === 0 && layout.width > 0 && layout.height > 0) {
             const maskWidth = Math.min(layout.width * 0.8, 300);
@@ -154,7 +152,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
         }
     };
 
-    
+
     const animatedImageStyle = useAnimatedStyle(() => ({
         transform: [
             { scale: withSpring(zoomLevel) },
@@ -256,7 +254,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
                                                     initialX={p.x}
                                                     initialY={p.y}
                                                     color={isCurrent ? '#00D4FF' : 'rgba(255,255,255,0.5)'}
-                                                    size={isCurrent ? (15 / zoomLevel) : (8 / zoomLevel)}
+                                                    size={isCurrent ? (8 / zoomLevel) : (4 / zoomLevel)}
                                                     onDragEnd={isCurrent ? handleDragEnd : undefined}
                                                     enabled={isCurrent}
                                                     scaleFactor={zoomLevel}
@@ -386,7 +384,7 @@ const styles = StyleSheet.create({
     crosshairContainer: { position: 'absolute', width: 100, height: 100, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', zIndex: 999 },
     crosshairVertical: { position: 'absolute', width: 2, height: 40, backgroundColor: 'rgba(255, 255, 255, 0.5)' },
     crosshairHorizontal: { position: 'absolute', width: 40, height: 2, backgroundColor: 'rgba(255, 255, 255, 0.5)' },
-    crosshairCenter: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF0000', borderWidth: 1, borderColor: '#fff' },
+    crosshairCenter: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF0000', borderWidth: 0 },
     zoomControls: {
         position: 'absolute',
         bottom: 20,
@@ -423,7 +421,7 @@ const styles = StyleSheet.create({
         borderRadius: 2,
     },
     scrollbarThumb: {
-        backgroundColor: 'rgba(0, 212, 255, 0.7)', 
+        backgroundColor: 'rgba(0, 212, 255, 0.7)',
         borderRadius: 2,
     },
 });
