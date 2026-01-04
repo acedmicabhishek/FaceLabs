@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
 import { FRONT_LANDMARKS } from '../constants/frontLandmarks';
 import DraggableDot from './DraggableDot';
@@ -19,7 +19,6 @@ const Crosshair = ({ x, y }: { x: number, y: number }) => (
     </View>
 );
 
-// Positions are now normalized (0 to 1) relative to the IMAGE, not the screen
 const FACE_MASK_POSITIONS: { [key: number]: Point } = {
     1: { x: 0.50, y: 0.20 },
     2: { x: 0.35, y: 0.45 },
@@ -80,14 +79,11 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
     const [helperVisible, setHelperVisible] = useState(true);
     const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
     const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-
-    // Zoom state
     const [zoomLevel, setZoomLevel] = useState(1);
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
     const currentLandmark = FRONT_LANDMARKS[currentStep];
 
-    // 1. Get Actual Image Dimensions (once)
     useEffect(() => {
         if (imageUri) {
             Image.getSize(imageUri, (w, h) => {
@@ -98,48 +94,31 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
         }
     }, [imageUri]);
 
-
-    // 2. Calculate Rendered Image Rect (The "Sticky" Logic)
-    // This tells us exactly where the image is inside the container (accounting for letterboxing)
     const getRenderedImageRect = () => {
         if (!containerLayout || !imageDimensions) return null;
-
         const { width: cw, height: ch } = containerLayout;
         const { width: iw, height: ih } = imageDimensions;
-
         const scale = Math.min(cw / iw, ch / ih);
-
         const renderedWidth = iw * scale;
         const renderedHeight = ih * scale;
-
         const offsetX = (cw - renderedWidth) / 2;
         const offsetY = (ch - renderedHeight) / 2;
-
         return { x: offsetX, y: offsetY, width: renderedWidth, height: renderedHeight, scale };
     };
 
     const renderedRect = getRenderedImageRect();
 
-
-    // 3. Initialize Points (Normalize them to Image coordinates 0-1)
     useEffect(() => {
-        // Only initialize if we have dimensions and no points yet
         if (points.length === 0 && renderedRect) {
-
             const initialPoints = FRONT_LANDMARKS.map((l) => {
-                // Use default normalized positions (0.0 - 1.0)
                 const pos = FACE_MASK_POSITIONS[l.id] || { x: 0.5, y: 0.5 };
-
-                // Convert Normalized -> Screen Coordinates
                 const screenX = renderedRect.x + (pos.x * renderedRect.width);
                 const screenY = renderedRect.y + (pos.y * renderedRect.height);
-
                 return {
                     x: screenX,
                     y: screenY,
                     id: l.id,
                     name: l.name,
-                    // Store normalized position for resizing re-calc
                     normalizedX: pos.x,
                     normalizedY: pos.y
                 };
@@ -148,37 +127,19 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
         }
     }, [renderedRect, points.length]);
 
-    // 4. Re-Project Points when Resize Happens
-    // If window resizes, renderedRect changes. We must re-calculate screen X/Y from normalized X/Y.
     useEffect(() => {
         if (points.length > 0 && renderedRect) {
             const needsUpdate = points.some(p => {
-                // Check if current screen pos matches what it should be
-                if (p.normalizedX === undefined) return true; // Old point style
-
+                if (p.normalizedX === undefined) return true;
                 const expectedX = renderedRect.x + ((p.normalizedX ?? 0.5) * renderedRect.width);
                 const expectedY = renderedRect.y + ((p.normalizedY ?? 0.5) * renderedRect.height);
-
-                // Allow small float tolerance
                 return Math.abs(p.x - expectedX) > 1 || Math.abs(p.y - expectedY) > 1;
             });
 
             if (needsUpdate) {
                 const updatedPoints = points.map(p => {
-                    // Start with existing normalized pos if available, else derive it (migrations)
-                    let normX = p.normalizedX;
-                    let normY = p.normalizedY;
-
-                    // If we don't have normalized (fresh load/bug), calculate it from old screen pos (approx)
-                    // This creates a self-healing effect if layout shifts unexpectedly
-                    if (normX === undefined || normY === undefined) {
-                        // We can't perfectly recover if layout changed since save, but we try best effort or default
-                        // For now, let's assume if it's missing we just default (or we could store it in types)
-                        // Ideally we update types.ts to include normalizedX/Y but for now we put it in the object at runtime
-                        normX = 0.5;
-                        normY = 0.5;
-                    }
-
+                    let normX = p.normalizedX ?? 0.5;
+                    let normY = p.normalizedY ?? 0.5;
                     return {
                         ...p,
                         x: renderedRect.x + (normX * renderedRect.width),
@@ -188,25 +149,16 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                 onPointsUpdate(updatedPoints);
             }
         }
-    }, [renderedRect]); // Re-run when layout changes
-
+    }, [renderedRect]);
 
     const handleDragEnd = (newScreenX: number, newScreenY: number) => {
         if (!renderedRect) return;
-
-        // Convert Screen -> Normalized (0-1)
-        // Clamp to image bounds
         const relativeX = newScreenX - renderedRect.x;
         const relativeY = newScreenY - renderedRect.y;
-
         let normX = relativeX / renderedRect.width;
         let normY = relativeY / renderedRect.height;
-
-        // Clamp 0-1
         normX = Math.max(0, Math.min(1, normX));
         normY = Math.max(0, Math.min(1, normY));
-
-        // Re-calculate pure screen X/Y from checked normalized coords
         const finalScreenX = renderedRect.x + (normX * renderedRect.width);
         const finalScreenY = renderedRect.y + (normY * renderedRect.height);
 
@@ -222,8 +174,6 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
         onPointsUpdate(newPoints);
     };
 
-
-    // --- Zoom Logic (Same as before but standard) ---
     useEffect(() => {
         if (zoomLevel === 1) setPanOffset({ x: 0, y: 0 });
     }, [zoomLevel]);
@@ -245,8 +195,6 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
             });
         });
 
-
-    // --- Navigation ---
     const handleNext = () => {
         if (currentStep < FRONT_LANDMARKS.length - 1) setCurrentStep(currentStep + 1);
         else onComplete();
@@ -257,118 +205,117 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
 
     return (
         <View style={styles.container}>
-            {/* Header */}
+            {/* Header - Transparent Overlay or Minimal */}
             <View style={styles.header}>
-                <Text style={styles.stepText}>{currentStep + 1} of {FRONT_LANDMARKS.length}</Text>
-                <Text style={styles.landmarkName}>{currentLandmark.name}</Text>
+                <View>
+                    <Text style={styles.stepText}>
+                        <Text style={{ fontFamily: 'FiraCode-Bold', color: '#fff' }}>{currentStep + 1}</Text>
+                        /{FRONT_LANDMARKS.length}
+                    </Text>
+                    <Text style={styles.landmarkName}>{currentLandmark.name}</Text>
+                </View>
                 <Text style={styles.progressText}>{Math.round(((currentStep + 1) / FRONT_LANDMARKS.length) * 100)}%</Text>
             </View>
 
-            <View style={styles.contentContainer}>
-                {/* Main Image Area */}
-                <View
-                    style={styles.imageArea}
-                    onLayout={(e) => setContainerLayout(e.nativeEvent.layout)}
-                >
-                    <GestureDetector gesture={Gesture.Exclusive(
-                        Gesture.Tap().numberOfTaps(2).onEnd((e) => {
-                            runOnJS(setZoomLevel)((prev) => {
-                                const newZoom = prev >= 4 ? 1 : prev * 2;
-                                if (newZoom === 1) runOnJS(setPanOffset)({ x: 0, y: 0 });
-                                return newZoom;
-                            });
-                        }),
-                        panGesture
-                    )}>
-                        <View style={[
-                            styles.zoomContainer,
-                            {
-                                transform: [
-                                    { scale: zoomLevel },
-                                    { translateX: panOffset.x / zoomLevel },
-                                    { translateY: panOffset.y / zoomLevel }
-                                ]
-                            }
-                        ]}>
-                            <GestureDetector gesture={Gesture.Tap().onEnd((e) => {
-                                runOnJS(handleDragEnd)(e.x, e.y);
-                            })}>
-                                <View style={{ width: '100%', height: '100%' }}>
-                                    <Image
-                                        source={{ uri: imageUri }}
-                                        style={styles.mainImage}
-                                        resizeMode="contain"
-                                    />
-                                    {points.map((p, i) => {
-                                        if (i > currentStep) return null;
-                                        const isCurrent = i === currentStep;
-                                        return (
-                                            <React.Fragment key={i}>
-                                                <DraggableDot
-                                                    initialX={p.x}
-                                                    initialY={p.y}
-                                                    color={isCurrent ? '#00D4FF' : 'rgba(255,255,255,0.5)'}
-                                                    size={isCurrent ? (8 / zoomLevel) : (4 / zoomLevel)}
-                                                    onDragEnd={isCurrent ? handleDragEnd : undefined}
-                                                    enabled={isCurrent}
-                                                    scaleFactor={zoomLevel}
-                                                />
-                                                {isCurrent && <Crosshair x={p.x} y={p.y} />}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </View>
-                            </GestureDetector>
-                        </View>
-                    </GestureDetector>
-
-                    {/* Simple Scrollbar Visuals (Optional/Simplified) */}
-
-                    {/* Zoom Controls */}
-                    <View style={styles.zoomControls}>
-                        <Text style={styles.zoomLabel}>Zoom Level</Text>
-                        <View style={styles.zoomButtons}>
-                            {[1, 2, 4].map((z) => (
-                                <Pressable
-                                    key={z}
-                                    style={[styles.zoomButton, zoomLevel === z && styles.activeZoom]}
-                                    onPress={() => setZoomLevel(z)}
-                                >
-                                    <Text style={[styles.zoomText, zoomLevel === z && styles.activeZoomText]}>{z}x</Text>
-                                </Pressable>
-                            ))}
-                        </View>
+            {/* Main Area */}
+            <View
+                style={styles.imageArea}
+                onLayout={(e) => setContainerLayout(e.nativeEvent.layout)}
+            >
+                <GestureDetector gesture={Gesture.Exclusive(
+                    Gesture.Tap().numberOfTaps(2).onEnd((e) => {
+                        runOnJS(setZoomLevel)((prev) => {
+                            const newZoom = prev >= 4 ? 1 : prev * 2;
+                            if (newZoom === 1) runOnJS(setPanOffset)({ x: 0, y: 0 });
+                            return newZoom;
+                        });
+                    }),
+                    panGesture
+                )}>
+                    <View style={[
+                        styles.zoomContainer,
+                        {
+                            transform: [
+                                { scale: zoomLevel },
+                                { translateX: panOffset.x / zoomLevel },
+                                { translateY: panOffset.y / zoomLevel }
+                            ]
+                        }
+                    ]}>
+                        <GestureDetector gesture={Gesture.Tap().onEnd((e) => {
+                            runOnJS(handleDragEnd)(e.x, e.y);
+                        })}>
+                            <View style={{ width: '100%', height: '100%' }}>
+                                <Image
+                                    source={{ uri: imageUri }}
+                                    style={styles.mainImage}
+                                    resizeMode="contain"
+                                />
+                                {points.map((p, i) => {
+                                    if (i > currentStep) return null;
+                                    const isCurrent = i === currentStep;
+                                    return (
+                                        <React.Fragment key={i}>
+                                            <DraggableDot
+                                                initialX={p.x}
+                                                initialY={p.y}
+                                                color={isCurrent ? '#00D4FF' : 'rgba(255,255,255,0.4)'}
+                                                size={isCurrent ? (8 / zoomLevel) : (4 / zoomLevel)}
+                                                onDragEnd={isCurrent ? handleDragEnd : undefined}
+                                                enabled={isCurrent}
+                                                scaleFactor={zoomLevel}
+                                            />
+                                            {isCurrent && <Crosshair x={p.x} y={p.y} />}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </View>
+                        </GestureDetector>
                     </View>
-                </View>
+                </GestureDetector>
 
-                {/* Helper Panel */}
                 {helperVisible && (
-                    <View style={styles.helperPanel}>
-                        <View style={styles.helperHeader}>
-                            <Text style={styles.helperTitle}>Target</Text>
-                            <Pressable onPress={() => setHelperVisible(false)}>
-                                <Text style={{ color: '#666' }}>✕</Text>
-                            </Pressable>
-                        </View>
+                    <View style={styles.helperFloater}>
+                        <Pressable style={styles.closeHelper} onPress={() => setHelperVisible(false)}>
+                            <Text style={styles.closeHelperText}>✕</Text>
+                        </Pressable>
                         <Image
                             source={currentLandmark.image}
                             style={styles.helperImage}
                             resizeMode="contain"
                         />
-                        <Text style={styles.helperHint}>Drag the blue dot to match the red dot in the diagram.</Text>
+
                     </View>
                 )}
+
+               {!helperVisible && (
+                    <Pressable style={styles.showHelpButton} onPress={() => setHelperVisible(true)}>
+                        <Text style={styles.showHelpText}>Show Target</Text>
+                    </Pressable>
+                )}
+
+                <View style={styles.zoomControls}>
+                    {[1, 2, 4].map((z) => (
+                        <Pressable
+                            key={z}
+                            style={[styles.zoomButton, zoomLevel === z && styles.activeZoom]}
+                            onPress={() => setZoomLevel(z)}
+                        >
+                            <Text style={[styles.zoomText, zoomLevel === z && styles.activeZoomText]}>{z}x</Text>
+                        </Pressable>
+                    ))}
+                </View>
             </View>
 
-            {/* Footer */}
             <View style={styles.footer}>
-                <Pressable onPress={handlePrev} style={styles.navButton}><Text style={styles.navText}>Back</Text></Pressable>
-                <Pressable onPress={() => setHelperVisible(!helperVisible)} style={styles.toggleButton}>
-                    <Text style={styles.navText}>{helperVisible ? 'Hide Help' : 'Show Help'}</Text>
+                <Pressable onPress={handlePrev} style={styles.backButton}>
+                    <Text style={styles.backButtonText}>Back</Text>
                 </Pressable>
 
-                <Pressable onPress={handleNext} style={[styles.navButton, styles.primaryButton]}>
-                    <Text style={styles.primaryText}>{currentStep === FRONT_LANDMARKS.length - 1 ? 'Finish' : 'Next'}</Text>
+                <Pressable onPress={handleNext} style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonText}>
+                        {currentStep === FRONT_LANDMARKS.length - 1 ? 'Finish Analysis' : 'Next Point'}
+                    </Text>
                 </Pressable>
             </View>
         </View>
@@ -377,35 +324,139 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#111', borderBottomWidth: 1, borderBottomColor: '#222' },
-    stepText: { color: '#666', fontSize: 12 },
-    landmarkName: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-    progressText: { color: '#00D4FF', fontSize: 12 },
-    contentContainer: { flex: 1, flexDirection: 'row' },
-    imageArea: { flex: 1, position: 'relative', backgroundColor: '#000', overflow: 'hidden' },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 10,
+        backgroundColor: '#000',
+        zIndex: 10,
+    },
+    stepText: { fontFamily: 'FiraCode-Regular', color: '#888', fontSize: 14 },
+    landmarkName: { fontFamily: 'FiraCode-Bold', color: '#fff', fontSize: 20, marginTop: 4 },
+    progressText: { fontFamily: 'FiraCode-Medium', color: '#00D4FF', fontSize: 14 },
+
+    imageArea: { flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
     zoomContainer: { width: '100%', height: '100%' },
     mainImage: { width: '100%', height: '100%' },
-    helperPanel: { width: 150, backgroundColor: '#1a1a1a', borderLeftWidth: 1, borderLeftColor: '#333', padding: 10, justifyContent: 'flex-start' },
-    helperHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-    helperTitle: { color: '#ccc', fontWeight: 'bold' },
-    helperImage: { width: '100%', height: 120, marginBottom: 10, backgroundColor: '#000', borderRadius: 8 },
-    helperHint: { color: '#888', fontSize: 10, textAlign: 'center' },
-    footer: { flexDirection: 'row', padding: 16, backgroundColor: '#111', justifyContent: 'space-between', alignItems: 'center' },
-    navButton: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, backgroundColor: '#222' },
-    toggleButton: { padding: 10 },
-    navText: { color: '#fff', fontWeight: '600' },
-    primaryButton: { backgroundColor: '#00D4FF' },
-    primaryText: { color: '#000', fontWeight: 'bold' },
-    zoomControls: { position: 'absolute', bottom: 20, right: 20, backgroundColor: '#111', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#333' },
-    zoomLabel: { color: '#666', fontSize: 10, marginBottom: 4, textAlign: 'center' },
-    zoomButtons: { flexDirection: 'row', gap: 8 },
-    zoomButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: '#222', minWidth: 40, alignItems: 'center' },
+
+    // Floating Helper (Webcam Style)
+    helperFloater: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        width: 180,
+        height: 220,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#333',
+        backgroundColor: '#000',
+        overflow: 'hidden',
+        zIndex: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 5,
+        elevation: 10,
+    },
+    helperImage: { width: '100%', flex: 1 },
+    closeHelper: {
+        position: 'absolute',
+        top: 5,
+        right: 5,
+        zIndex: 25,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    closeHelperText: { color: '#fff', fontSize: 12, fontFamily: 'FiraCode-Bold' },
+    helperLabelContainer: {
+        backgroundColor: '#111',
+        paddingVertical: 6,
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#333',
+    },
+    helperLabel: { color: '#fff', fontSize: 10, fontFamily: 'FiraCode-Regular' },
+
+    showHelpButton: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        backgroundColor: 'rgba(50,50,50,0.9)',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#555',
+        zIndex: 20,
+    },
+    showHelpText: { color: '#fff', fontFamily: 'FiraCode-Medium', fontSize: 12 },
+
+    zoomControls: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        flexDirection: 'row',
+        gap: 8,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#333',
+    },
+    zoomButton: {
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 8,
+        backgroundColor: '#222',
+    },
     activeZoom: { backgroundColor: '#00D4FF' },
-    zoomText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    activeZoomText: { color: '#000' },
+    zoomText: { color: '#fff', fontFamily: 'FiraCode-Regular', fontSize: 12 },
+    activeZoomText: { color: '#000', fontFamily: 'FiraCode-Bold' },
+
+    // Footer
+    footer: {
+        flexDirection: 'row',
+        padding: 20,
+        backgroundColor: '#000',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#111',
+    },
+    backButton: {
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        backgroundColor: '#222',
+    },
+    backButtonText: {
+        color: '#fff',
+        fontFamily: 'FiraCode-Medium',
+        fontSize: 16,
+    },
+    primaryButton: {
+        flex: 1,
+        marginLeft: 20,
+        paddingVertical: 14,
+        borderRadius: 12,
+        backgroundColor: '#00D4FF',
+        alignItems: 'center',
+    },
+    primaryButtonText: {
+        color: '#000',
+        fontFamily: 'FiraCode-Bold',
+        fontSize: 16,
+    },
+
     crosshairContainer: { position: 'absolute', width: 100, height: 100, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', zIndex: 999 },
     crosshairCenter: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF0000', borderWidth: 0 },
-    scrollbarHorizontalBack: { position: 'absolute', height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2 },
-    scrollbarVerticalBack: { position: 'absolute', width: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2 },
-    scrollbarThumb: { backgroundColor: 'rgba(0, 212, 255, 0.7)', borderRadius: 2 },
 });

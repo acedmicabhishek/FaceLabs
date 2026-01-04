@@ -3,7 +3,31 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 
+import { useFonts } from 'expo-font';
+import { useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+
 export default function RootLayout() {
+    const [loaded, error] = useFonts({
+        'FiraCode-Regular': require('../resources/font/FiraCode-Regular.ttf'),
+        'FiraCode-Bold': require('../resources/font/FiraCode-Bold.ttf'),
+        'FiraCode-Medium': require('../resources/font/FiraCode-Medium.ttf'),
+        'FiraCode-Light': require('../resources/font/FiraCode-Light.ttf'),
+        'FiraCode-SemiBold': require('../resources/font/FiraCode-SemiBold.ttf'),
+    });
+
+    useEffect(() => {
+        if (error) throw error;
+    }, [error]);
+
+    if (!loaded) {
+        return (
+            <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#00D4FF" />
+            </View>
+        );
+    }
+
     return (
         <GestureHandlerRootView style={styles.container}>
             <StatusBar style="light" />
@@ -14,7 +38,7 @@ export default function RootLayout() {
                     },
                     headerTintColor: '#fff',
                     headerTitleStyle: {
-                        fontWeight: 'bold',
+                        fontFamily: 'FiraCode-Bold',
                     },
                     contentStyle: {
                         backgroundColor: '#000',
