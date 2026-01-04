@@ -33,7 +33,7 @@ export default function ResultScreen() {
                 <Text style={styles.scoreLabel}>FACE SCORE</Text>
                 <Text style={styles.scoreValue}>{report.totalScore}</Text>
                 <Text style={styles.scoreTier}>
-                    {report.totalScore >= 85 ? 'TIER 1/2' : report.totalScore >= 70 ? 'TIER 3' : 'TIER 4+'}
+                    {report.totalScore >= 8.5 ? 'TIER 1/2' : report.totalScore >= 7.0 ? 'TIER 3' : 'TIER 4+'}
                 </Text>
             </LinearGradient>
 
