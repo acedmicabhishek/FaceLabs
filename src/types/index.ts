@@ -3,6 +3,8 @@ export interface Point {
     y: number;
     id?: number | string;
     name?: string;
+    normalizedX?: number;
+    normalizedY?: number;
 }
 
 export interface Metric {
