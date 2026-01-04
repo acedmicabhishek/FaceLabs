@@ -82,6 +82,12 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
     const [zoomLevel, setZoomLevel] = useState(1);
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
+    // Ref to access fresh state in closures/callbacks
+    const stateRef = React.useRef({ points, currentStep });
+    useEffect(() => {
+        stateRef.current = { points, currentStep };
+    }, [points, currentStep]);
+
     const currentLandmark = FRONT_LANDMARKS[currentStep];
 
     useEffect(() => {
@@ -205,7 +211,9 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
             return;
         }
 
-        const currentPoint = points[currentStep];
+        const { points: currentPoints, currentStep: stepIdx } = stateRef.current;
+        const currentPoint = currentPoints[stepIdx];
+
         let targetPanX = 0;
         let targetPanY = 0;
 
@@ -226,8 +234,8 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
             // -dx * S = Px / S  => Px = -dx * S * S. 
             // Correct.
 
-            const idealPanX = -dx * targetZoom * targetZoom;
-            const idealPanY = -dy * targetZoom * targetZoom;
+            const idealPanX = -dx * targetZoom;
+            const idealPanY = -dy * targetZoom;
 
             // Clamp locally
             const maxDx = containerLayout.width * (targetZoom - 1) / 2;

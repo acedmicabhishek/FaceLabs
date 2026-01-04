@@ -61,6 +61,12 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
 
     const [zoomLevel, setZoomLevel] = useState(1);
 
+    // Ref to access fresh state in closures/callbacks
+    const stateRef = React.useRef({ points, currentStep });
+    useEffect(() => {
+        stateRef.current = { points, currentStep };
+    }, [points, currentStep]);
+
     // Zoom/Pan Shared Values
     const translationX = useSharedValue(0);
     const translationY = useSharedValue(0);
@@ -212,7 +218,9 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
             return;
         }
 
-        const currentPoint = points[currentStep];
+        const { points: currentPoints, currentStep: stepIdx } = stateRef.current;
+        const currentPoint = currentPoints[stepIdx];
+
         let targetPanX = 0;
         let targetPanY = 0;
 
@@ -223,8 +231,8 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
             const dy = currentPoint.y - cy;
 
             // Logic: Tx = -dx * Z^2
-            const idealPanX = -dx * targetZoom * targetZoom;
-            const idealPanY = -dy * targetZoom * targetZoom;
+            const idealPanX = -dx * targetZoom;
+            const idealPanY = -dy * targetZoom;
 
             // Clamp
             const maxDx = containerLayout.width * (targetZoom - 1) / 2;
