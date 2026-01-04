@@ -44,3 +44,6 @@ yarn-error.*
 # my misc
 Plan.md
 ratings.md
+core.md
+
+node_modules/
