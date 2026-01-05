@@ -46,7 +46,7 @@ export default function RootLayout() {
                 }}
             >
                 <Stack.Screen name="index" options={{ title: 'FaceLabs', headerShown: false }} />
-                <Stack.Screen name="analysis" options={{ title: 'Analysis' }} />
+                <Stack.Screen name="analysis" options={{ title: 'Analysis', headerShown: false }} />
                 <Stack.Screen name="result" options={{ title: 'Your Report' }} />
             </Stack>
         </GestureHandlerRootView>

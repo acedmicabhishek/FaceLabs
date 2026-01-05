@@ -6,6 +6,8 @@ import GuidedMapperFront from '../src/components/GuidedMapperFront';
 import GuidedMapperSide from '../src/components/GuidedMapperSide';
 import { Point } from '../src/types';
 import { calculateAllMetrics } from '../src/utils/scoring';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -29,7 +31,6 @@ export default function AnalysisScreen() {
         }
     };
 
-
     const handleCalculate = () => {
         if (!gender) return;
         const report = calculateAllMetrics(points, type as 'front' | 'side', gender);
@@ -39,27 +40,47 @@ export default function AnalysisScreen() {
         });
     };
 
-    // 1. Gender Selection Step
+    const goHome = () => {
+        router.replace('/');
+    };
+
+    // 1. Gender Selection Step (Themed)
     if (!gender) {
         return (
             <View style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Select Gender</Text>
-                </View>
-                <View style={styles.selectionContainer}>
-                    <Pressable
-                        style={[styles.genderButton, { borderColor: '#00D4FF' }]}
-                        onPress={() => setGender('male')}
-                    >
-                        <Text style={[styles.genderText, { color: '#00D4FF' }]}>Male</Text>
+                <LinearGradient
+                    colors={['#0f0c29', '#302b63', '#24243e']}
+                    style={StyleSheet.absoluteFill}
+                />
+
+                <SafeAreaView style={{ flex: 1 }}>
+                    <Pressable onPress={goHome} style={styles.topBackBtn}>
+                        <Text style={styles.topBackText}>{'<'}</Text>
                     </Pressable>
-                    <Pressable
-                        style={[styles.genderButton, { borderColor: '#FF00D4', marginTop: 20 }]}
-                        onPress={() => setGender('female')}
-                    >
-                        <Text style={[styles.genderText, { color: '#FF00D4' }]}>Female</Text>
-                    </Pressable>
-                </View>
+
+                    <View style={styles.content}>
+                        <Text style={styles.heroTitle}>GENDER<Text style={styles.highlight}> SELECT</Text></Text>
+                        <Text style={styles.heroSubtitle}>Calibrate Analysis Standards</Text>
+
+                        <View style={styles.cardContainer}>
+                            <Pressable
+                                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                                onPress={() => setGender('male')}
+                            >
+                                <Text style={styles.cardTitle}>Male</Text>
+                                <Text style={styles.cardDescription}>Optimized for masculine aesthetic markers and ratios.</Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                                onPress={() => setGender('female')}
+                            >
+                                <Text style={styles.cardTitle}>Female</Text>
+                                <Text style={styles.cardDescription}>Optimized for feminine aesthetic markers and ratios.</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </SafeAreaView>
             </View>
         );
     }
@@ -72,6 +93,8 @@ export default function AnalysisScreen() {
                 points={points}
                 onPointsUpdate={setPoints}
                 onComplete={handleCalculate}
+                onBack={() => setImage(null)}
+                onExit={goHome}
             />
         );
     }
@@ -84,25 +107,50 @@ export default function AnalysisScreen() {
                 points={points}
                 onPointsUpdate={setPoints}
                 onComplete={handleCalculate}
+                onBack={() => setImage(null)}
+                onExit={goHome}
             />
         );
     }
 
 
-    const title = type === 'front' ? 'Front Profile Analysis' : 'Side Profile Analysis';
+    const titleText = type === 'front' ? 'FRONT' : 'SIDE';
+    const subtitleText = type === 'front' ? 'Frontal Analysis Setup' : 'Side Profile Analysis Setup';
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>Gender: {gender.charAt(0).toUpperCase() + gender.slice(1)}</Text>
-            </View>
+            <LinearGradient
+                colors={['#0f0c29', '#302b63', '#24243e']}
+                style={StyleSheet.absoluteFill}
+            />
 
-            <View style={styles.imageContainer}>
-                <Pressable style={styles.uploadButton} onPress={pickImage}>
-                    <Text style={styles.uploadText}>+ Upload Photo</Text>
+            <SafeAreaView style={{ flex: 1 }}>
+                <Pressable onPress={goHome} style={styles.topBackBtn}>
+                    <Text style={styles.topBackText}>{'<'}</Text>
                 </Pressable>
-            </View>
+
+                <View style={styles.content}>
+                    <Text style={styles.heroTitle}>
+                        {titleText} <Text style={styles.highlight}>PROFILE</Text>
+                    </Text>
+                    <Text style={styles.heroSubtitle}>
+                        {subtitleText} ({gender?.toUpperCase()})
+                    </Text>
+
+                    <View style={styles.cardContainer}>
+                        <Pressable
+                            style={({ pressed }) => [styles.uploadCard, pressed && styles.cardPressed]}
+                            onPress={pickImage}
+                        >
+                            <View style={styles.uploadIconCircle}>
+                                <Text style={styles.uploadIcon}>+</Text>
+                            </View>
+                            <Text style={styles.cardTitle}>Upload Photo</Text>
+                            <Text style={styles.cardDescription}>Select from gallery. Ensure good lighting and neutral expression.</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </SafeAreaView>
         </View>
     );
 }
@@ -112,59 +160,101 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
-    header: {
-        padding: 24,
-        paddingTop: 60,
-        backgroundColor: '#111',
-        borderBottomWidth: 1,
-        borderBottomColor: '#222',
-        alignItems: 'center',
-    },
-    title: {
-        fontSize: 20,
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    subtitle: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 5,
-    },
-    imageContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    uploadButton: {
-        padding: 30,
-        borderWidth: 2,
-        borderColor: '#333',
-        borderStyle: 'dashed',
+
+    // Top Back Button
+    topBackBtn: {
+        position: 'absolute',
+        top: 20, // SafeAreaView adds padding, but this gives extra margin from top edge
+        left: 20,
+        width: 40,
+        height: 40,
         borderRadius: 20,
-        backgroundColor: '#111',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 50,
     },
-    uploadText: {
-        color: '#666',
-        fontSize: 18,
-        fontWeight: 'bold',
+    topBackText: {
+        color: '#fff',
+        fontSize: 20,
+        fontFamily: 'FiraCode-Bold',
+        marginTop: -2, // Visual optical adjustment
     },
-    selectionContainer: {
+
+    // --- Themed Gender Selection Styles ---
+    content: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
     },
-    genderButton: {
-        width: '100%',
-        padding: 20,
-        borderRadius: 12,
-        borderWidth: 2,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        alignItems: 'center',
+    heroTitle: {
+        fontSize: 48,
+        fontWeight: '800',
+        color: '#fff',
+        marginBottom: 8,
+        letterSpacing: 2,
     },
-    genderText: {
+    heroSubtitle: {
+        fontSize: 16,
+        color: '#aaa',
+        marginBottom: 60,
+        letterSpacing: 1,
+    },
+    highlight: {
+        color: '#00D4FF',
+    },
+    cardContainer: {
+        width: '100%',
+        gap: 20,
+    },
+    card: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: 24,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        width: '100%',
+    },
+    cardPressed: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        transform: [{ scale: 0.98 }],
+    },
+    cardTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        letterSpacing: 2,
-    }
+        color: '#fff',
+        marginBottom: 8,
+    },
+    cardDescription: {
+        fontSize: 14,
+        color: '#ccc',
+    },
+
+    // --- Upload Card Styles ---
+    uploadCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: 40,
+        borderRadius: 24,
+        borderWidth: 2,
+        borderColor: '#00D4FF',
+        borderStyle: 'dashed',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    uploadIconCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    uploadIcon: {
+        fontSize: 40,
+        color: '#00D4FF',
+        fontWeight: '300',
+    },
 });

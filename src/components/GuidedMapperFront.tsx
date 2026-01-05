@@ -5,12 +5,16 @@ import DraggableDot from './DraggableDot';
 import { Point } from '../types';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export interface GuidedMapperProps {
     imageUri: string;
     points: Point[];
     onPointsUpdate: (points: Point[]) => void;
     onComplete: () => void;
+    onBack: () => void;
+    onExit: () => void;
 }
 
 const Crosshair = ({ x, y }: { x: number, y: number }) => (
@@ -74,7 +78,7 @@ const FACE_MASK_POSITIONS: { [key: number]: Point } = {
     52: { x: 0.70, y: 0.60 },
 };
 
-export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, onComplete }: GuidedMapperProps) {
+export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, onComplete, onBack, onExit }: GuidedMapperProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [helperVisible, setHelperVisible] = useState(true);
     const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
@@ -203,6 +207,7 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
     };
     const handlePrev = () => {
         if (currentStep > 0) setCurrentStep(currentStep - 1);
+        else onBack();
     };
 
     const handleZoom = (targetZoom: number) => {
@@ -223,17 +228,6 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
             const dx = currentPoint.x - cx;
             const dy = currentPoint.y - cy;
 
-            // Equation: Tx = -dx * Scale^2 (see planning for derivation)
-            // But verify: Translate * Scale * Point
-            // S * (dx) + Tx = 0 => Tx = -S * dx?
-            // VISUAL translation is Tx / S ?? NO. in RN 'transform' array:
-            // [{ scale: S }, { translateX: Tx/S }, { translateY: Ty/S }] in my render code?
-            // Code: translateX: panOffset.x / zoomLevel.
-            // Screen Move = panOffset.x / zoomLevel.
-            // We want Screen Move = -dx * zoomLevel (to counteract the zoom expansion of the offset).
-            // -dx * S = Px / S  => Px = -dx * S * S. 
-            // Correct.
-
             const idealPanX = -dx * targetZoom;
             const idealPanY = -dy * targetZoom;
 
@@ -251,8 +245,13 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
 
     return (
         <View style={styles.container}>
-            {/* Header - Transparent Overlay or Minimal */}
-            <View style={styles.header}>
+            <LinearGradient
+                colors={['#0f0c29', '#302b63', '#24243e']}
+                style={StyleSheet.absoluteFill}
+            />
+
+            {/* Header - Transparent Overlay using SafeAreaView */}
+            <SafeAreaView style={styles.header} edges={['top']}>
                 <View>
                     <Text style={styles.stepText}>
                         <Text style={{ fontFamily: 'FiraCode-Bold', color: '#fff' }}>{currentStep + 1}</Text>
@@ -260,8 +259,13 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                     </Text>
                     <Text style={styles.landmarkName}>{currentLandmark.name}</Text>
                 </View>
-                <Text style={styles.progressText}>{Math.round(((currentStep + 1) / FRONT_LANDMARKS.length) * 100)}%</Text>
-            </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <Text style={styles.progressText}>{Math.round(((currentStep + 1) / FRONT_LANDMARKS.length) * 100)}%</Text>
+                    <Pressable onPress={onExit} style={styles.exitButton}>
+                        <Text style={styles.exitButtonText}>✕</Text>
+                    </Pressable>
+                </View>
+            </SafeAreaView>
 
             {/* Main Area */}
             <View
@@ -327,7 +331,6 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
                             style={styles.helperImage}
                             resizeMode="contain"
                         />
-
                     </View>
                 )}
 
@@ -366,22 +369,22 @@ export default function GuidedMapperFront({ imageUri, points, onPointsUpdate, on
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#000' },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 10,
+        // Removed paddingTop, handled by SafeAreaView
         paddingBottom: 10,
-        backgroundColor: '#000',
+        // Transparent default
         zIndex: 10,
     },
     stepText: { fontFamily: 'FiraCode-Regular', color: '#888', fontSize: 14 },
     landmarkName: { fontFamily: 'FiraCode-Bold', color: '#fff', fontSize: 20, marginTop: 4 },
     progressText: { fontFamily: 'FiraCode-Medium', color: '#00D4FF', fontSize: 14 },
 
-    imageArea: { flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
+    imageArea: { flex: 1, position: 'relative', overflow: 'hidden' },
     zoomContainer: { width: '100%', height: '100%' },
     mainImage: { width: '100%', height: '100%' },
 
@@ -469,11 +472,11 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         padding: 20,
-        backgroundColor: '#000',
+        backgroundColor: 'rgba(0,0,0,0.5)', // Frosted glass feel
         justifyContent: 'space-between',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: '#111',
+        borderTopColor: 'rgba(255,255,255,0.1)',
     },
     backButton: {
         paddingVertical: 14,
@@ -502,4 +505,17 @@ const styles = StyleSheet.create({
 
     crosshairContainer: { position: 'absolute', width: 100, height: 100, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', zIndex: 999 },
     crosshairCenter: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF0000', borderWidth: 0 },
+    exitButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    exitButtonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
 });

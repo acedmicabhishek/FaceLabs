@@ -5,12 +5,16 @@ import DraggableDot from './DraggableDot';
 import { Point } from '../types';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export interface GuidedMapperProps {
     imageUri: string;
     points: Point[];
     onPointsUpdate: (points: Point[]) => void;
     onComplete: () => void;
+    onBack: () => void;
+    onExit: () => void;
 }
 
 const Crosshair = ({ x, y }: { x: number, y: number }) => (
@@ -53,7 +57,7 @@ const SIDE_MASK_POSITIONS: { [key: number]: Point } = {
     31: { x: 0.72, y: 0.75 },
 };
 
-export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onComplete }: GuidedMapperProps) {
+export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onComplete, onBack, onExit }: GuidedMapperProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [helperVisible, setHelperVisible] = useState(true);
     const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
@@ -210,6 +214,7 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
     };
     const handlePrev = () => {
         if (currentStep > 0) setCurrentStep(currentStep - 1);
+        else onBack();
     };
 
     const handleZoom = (targetZoom: number) => {
@@ -258,8 +263,12 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
 
     return (
         <View style={styles.container}>
+            <LinearGradient
+                colors={['#0f0c29', '#302b63', '#24243e']}
+                style={StyleSheet.absoluteFill}
+            />
             {/* Header */}
-            <View style={styles.header}>
+            <SafeAreaView style={styles.header} edges={['top']}>
                 <View>
                     <Text style={styles.stepText}>
                         <Text style={{ fontFamily: 'FiraCode-Bold', color: '#fff' }}>{currentStep + 1}</Text>
@@ -267,8 +276,13 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
                     </Text>
                     <Text style={styles.landmarkName}>{currentLandmark.name}</Text>
                 </View>
-                <Text style={styles.progressText}>{Math.round(((currentStep + 1) / SIDE_LANDMARKS.length) * 100)}%</Text>
-            </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <Text style={styles.progressText}>{Math.round(((currentStep + 1) / SIDE_LANDMARKS.length) * 100)}%</Text>
+                    <Pressable onPress={onExit} style={styles.exitButton}>
+                        <Text style={styles.exitButtonText}>✕</Text>
+                    </Pressable>
+                </View>
+            </SafeAreaView>
 
             {/* Main Image Area */}
             <View
@@ -368,22 +382,22 @@ export default function GuidedMapperSide({ imageUri, points, onPointsUpdate, onC
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#000' },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 10,
+        // Removed paddingTop
         paddingBottom: 10,
-        backgroundColor: '#000',
+        // Transparent
         zIndex: 10,
     },
     stepText: { fontFamily: 'FiraCode-Regular', color: '#888', fontSize: 14 },
     landmarkName: { fontFamily: 'FiraCode-Bold', color: '#fff', fontSize: 20, marginTop: 4 },
     progressText: { fontFamily: 'FiraCode-Medium', color: '#00D4FF', fontSize: 14 },
 
-    imageArea: { flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#000' },
+    imageArea: { flex: 1, position: 'relative', overflow: 'hidden' },
     zoomContainer: { width: '100%', height: '100%' },
     mainImage: { width: '100%', height: '100%' },
 
@@ -470,11 +484,11 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         padding: 20,
-        backgroundColor: '#000',
+        backgroundColor: 'rgba(0,0,0,0.5)', // Frosted glass
         justifyContent: 'space-between',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: '#111',
+        borderTopColor: 'rgba(255,255,255,0.1)',
     },
     backButton: {
         paddingVertical: 14,
@@ -502,4 +516,17 @@ const styles = StyleSheet.create({
     },
     crosshairContainer: { position: 'absolute', width: 100, height: 100, justifyContent: 'center', alignItems: 'center', pointerEvents: 'none', zIndex: 999 },
     crosshairCenter: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF0000', borderWidth: 0 },
+    exitButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    exitButtonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
 });
