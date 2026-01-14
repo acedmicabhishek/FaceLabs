@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import GuidedMapperFront from '../src/components/GuidedMapperFront';
 import GuidedMapperSide from '../src/components/GuidedMapperSide';
+import FreeStyleMapper from '../src/components/FreeStyleMapper';
 import { Point } from '../src/types';
 import { calculateAllMetrics } from '../src/utils/scoring';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -113,9 +114,21 @@ export default function AnalysisScreen() {
         );
     }
 
+    // 4. Mapper Step (Free Style)
+    if (type === 'free' && image) {
+        return (
+            <FreeStyleMapper
+                imageUri={image}
+                gender={gender}
+                onBack={() => setImage(null)}
+                onExit={goHome}
+            />
+        );
+    }
 
-    const titleText = type === 'front' ? 'FRONT' : 'SIDE';
-    const subtitleText = type === 'front' ? 'Frontal Analysis Setup' : 'Side Profile Analysis Setup';
+
+    const titleText = type === 'front' ? 'FRONT' : type === 'side' ? 'SIDE' : 'FREE';
+    const subtitleText = type === 'front' ? 'Frontal Analysis Setup' : type === 'side' ? 'Side Profile Analysis Setup' : 'Free Style Analysis';
 
     return (
         <View style={styles.container}>

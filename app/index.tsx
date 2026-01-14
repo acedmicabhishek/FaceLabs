@@ -32,6 +32,14 @@ export default function Index() {
                         <Text style={styles.cardTitle}>Front Profile</Text>
                         <Text style={styles.cardDescription}>Analyze Symmetry, Ratios, and Eye Spacing.</Text>
                     </Pressable>
+
+                    <Pressable
+                        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                        onPress={() => router.push('/analysis?type=free')}
+                    >
+                        <Text style={styles.cardTitle}>Free Style</Text>
+                        <Text style={styles.cardDescription}>Dynamic Point Placement, Angles, and Ratios.</Text>
+                    </Pressable>
                 </View>
             </View>
         </View>
