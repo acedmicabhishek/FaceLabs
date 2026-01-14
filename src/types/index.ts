@@ -14,7 +14,7 @@ export interface Metric {
     score: number;
     tier: string;
     idealRange: [number, number];
-    category: 'Harmony' | 'Dimorphism' | 'Angularity' | 'Feature';
+    category: 'Harmony' | 'Dimorphism' | 'Angularity' | 'Soft Tissue';
 }
 
 export interface ScoreReport {
@@ -23,9 +23,9 @@ export interface ScoreReport {
         harmony: number;
         dimorphism: number;
         angularity: number;
-        feature: number;
+        softTissue: number;
     };
     metrics: Metric[];
 }
 
-export type Pillar = 'Harmony' | 'Dimorphism' | 'Angularity' | 'Feature';
+export type Pillar = 'Harmony' | 'Dimorphism' | 'Angularity' | 'Soft Tissue';
