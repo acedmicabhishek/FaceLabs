@@ -40,6 +40,21 @@ Our proprietary scoring algorithm evaluates your face across four distinct pilla
   <img src="ReadmeContent/image5.jpg" width="180" />
 </div>
 
+## SMV Scale Guide
+
+The application uses a standardized PSL scale to categorize aesthetic ratings:
+
+| Tier | Male / Female | Rating | Description |
+| :--- | :--- | :--- | :--- |
+| **Elite** | Chad / Stacy | 8.0 - 9.9 | Near aesthetic perfection. |
+| **Superior** | ChadLite / StacyLite | 7.0 - 8.0 | Extremely attractive, top-tier aesthetics. |
+| **High** | HTN / HTB | 6.0 - 7.0 | High-Tier Normie/Becky; noticeably attractive. |
+| **Mid** | MTN / MTB | 5.0 - 6.0 | Average, balanced features. |
+| **Low** | LTN / LTB | 4.0 - 5.0 | Low-Tier Normie/Becky; noticeable flaws. |
+| **Sub5** | SUB5 | 3.0 - 4.0 | Significant aesthetic deviations (Cooked). |
+| **SubHuman** | SubHuman | 0.0 - 3.0 | Severe structural inconsistencies (Beyond Cooked). |
+
+
 ## Installation
 
 FaceLabs is currently available for Android. To get started:
