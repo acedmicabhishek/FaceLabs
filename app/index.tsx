@@ -17,6 +17,7 @@ export default function Index() {
                 <Text style={styles.subtitle}>Precision Aesthetic Analysis</Text>
 
                 <View style={styles.cardContainer}>
+                    {/*
                     <Pressable
                         style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
                         onPress={() => router.push('/analysis?type=side')}
@@ -32,6 +33,7 @@ export default function Index() {
                         <Text style={styles.cardTitle}>Front Profile</Text>
                         <Text style={styles.cardDescription}>Analyze Symmetry, Ratios, and Eye Spacing.</Text>
                     </Pressable>
+                    */}
 
                     <Pressable
                         style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}

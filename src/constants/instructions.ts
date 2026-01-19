@@ -19,7 +19,7 @@ export const MEASUREMENT_INSTRUCTIONS: Record<string, string> = {
     nasal_tip_angle: "Draw angle of the nasal tip.",
     nasomental_angle: "Draw angle between nose tip and chin.",
     deviation_iaa_jfa: "Draw 2 separate angles: 1. Ipsilateral Alar Angle, 2. Jaw Frontal Angle (or vice versa).",
-    fja: "Draw 3 points: 1. Cheek/Jaw top, 2. Chin side, 3. Chin center?",
+    jfa: "Draw 3 points: 1. Cheek/Jaw top, 2. Chin side, 3. Chin center?",
     glabella_convexity: "Draw angle of glabella prominence.",
 
     // Ratios (Order Matters for s1/s2!)

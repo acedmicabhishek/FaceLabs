@@ -351,7 +351,7 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                 if (selectedMetric.id === 'ramus_mandible_ratio') {
                     return (s1 / s2);
                 }
-                if (selectedMetric.id === 'chin_philtrum') {
+                if (selectedMetric.id === 'chin_philtrum_ratio') {
                     return (s2 / s1);
                 }
                 return s2 / s1;

@@ -558,7 +558,7 @@ export const RATINGS: RatingConfig[] = [
 
     // Jaw Frontal Angle (FJA)
     {
-        measurementId: 'fja',
+        measurementId: 'jfa',
         gender: 'male',
         ranges: [
             { min: 84.5, max: 95, tier: 'Chad', score: 25 },
@@ -571,7 +571,7 @@ export const RATINGS: RatingConfig[] = [
         ]
     },
     {
-        measurementId: 'fja',
+        measurementId: 'jfa',
         gender: 'female',
         ranges: [
             { min: 86, max: 97, tier: 'Chad', score: 25 },

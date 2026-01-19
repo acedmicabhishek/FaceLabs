@@ -39,7 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-
+.vscode/
 
 # my misc
 Plan.md
@@ -47,3 +47,4 @@ ratings.md
 core.md
 
 node_modules/
+android/

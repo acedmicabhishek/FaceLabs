@@ -37,7 +37,7 @@ export const MEASUREMENTS: MeasurementDefinition[] = [
     { id: 'brow_sterness', name: 'Brow Sterness', type: 'ratio', genderSpecific: true, pillar: 'Dimorphism', description: 'Proximity of brow to eye (set).' },
     { id: 'glabella_convexity', name: 'Glabella Convexity', type: 'angle', genderSpecific: true, pillar: 'Dimorphism', description: 'Prominence of the brow ridge.' },
     { id: 'lower_full_face_ratio', name: 'Lower to Full Face Ratio', type: 'percentage', genderSpecific: true, pillar: 'Harmony', description: 'Lower face height vs total face height.' },
-    { id: 'fja', name: 'Frontal Jaw Angle (FJA)', type: 'angle', genderSpecific: true, pillar: 'Angularity', description: 'Angle of the jawline from front view.' },
+    { id: 'jfa', name: 'Frontal Jaw Angle (JFA)', type: 'angle', genderSpecific: true, pillar: 'Angularity', description: 'Angle of the jawline from front view.' },
     { id: 'nasolabial_angle', name: 'Nasolabial Angle', type: 'angle', genderSpecific: true, pillar: 'Soft Tissue', description: 'Angle between nose base and upper lip.' },
     { id: 'facial_convexity', name: 'Facial Convexity', type: 'angle', genderSpecific: true, pillar: 'Harmony', description: 'Angle of total face profile (Glabella-Subnasale-Pogonion).' },
     { id: 'orbit_vector', name: 'Orbital Vector', type: 'length', genderSpecific: false, pillar: 'Soft Tissue', description: 'Eye support/undereye area.' },

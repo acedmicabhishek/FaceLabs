@@ -1,4 +1,3 @@
-import { Pillar } from '../types';
 import { IdealRangeDef } from './scoring_male'; // Re-use interface
 
 export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
@@ -12,8 +11,8 @@ export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
         tier: 'Angularity',
         maxScore: 100
     },
-    ramus_to_mandible: {
-        id: 'ramus_to_mandible',
+    ramus_mandible_ratio: {
+        id: 'ramus_mandible_ratio',
         name: 'Ramus/Mandible Ratio',
         min: 0.6, // Shorter ramus often acceptable
         max: 0.9,
@@ -27,7 +26,7 @@ export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
         min: 95,
         max: 115, // Female: Typically more obtuse (upturned nose)
         penaltyPerUnit: 2,
-        tier: 'Feature',
+        tier: 'Soft Tissue',
         maxScore: 100
     },
     nasofrontal_angle: {
@@ -45,7 +44,7 @@ export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
         min: 110,
         max: 130,
         penaltyPerUnit: 1.5,
-        tier: 'Feature',
+        tier: 'Soft Tissue',
         maxScore: 100
     },
     facial_convexity: {
@@ -63,7 +62,7 @@ export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
         min: 90,
         max: 110,
         penaltyPerUnit: 2,
-        tier: 'Feature',
+        tier: 'Soft Tissue',
         maxScore: 100
     },
 
@@ -104,8 +103,8 @@ export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
         tier: 'Dimorphism',
         maxScore: 100
     },
-    chin_philtrum: {
-        id: 'chin_philtrum',
+    chin_philtrum_ratio: {
+        id: 'chin_philtrum_ratio',
         name: 'Chin/Philtrum Ratio',
         min: 1.8, // Smaller chin relative to philtrum than males
         max: 2.4,
@@ -113,8 +112,8 @@ export const IDEAL_RANGES_FEMALE: Record<string, IdealRangeDef> = {
         tier: 'Harmony',
         maxScore: 100
     },
-    jaw_frontal: {
-        id: 'jaw_frontal',
+    jfa: {
+        id: 'jfa',
         name: 'Jaw Angle (Front)',
         min: 70,
         max: 82, // V-shape preferred (65-80 range)

@@ -253,8 +253,8 @@ export const calculateAllMetrics = (points: Point[], profileType: 'front' | 'sid
             const dx = pChinLeft.x - pJawLeft.x;
             const dy = pChinLeft.y - pJawLeft.y;
             const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-            metrics.push(calculateMetricScore('fja', angle, gender)); // Updated ID
-        } else metrics.push(calculateMetricScore('fja', NaN, gender));
+            metrics.push(calculateMetricScore('jfa', angle, gender));
+        } else metrics.push(calculateMetricScore('jfa', NaN, gender));
     }
 
     return generateReport(metrics);
