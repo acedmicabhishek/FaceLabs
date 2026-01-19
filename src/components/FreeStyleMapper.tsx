@@ -46,6 +46,7 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
     // Flattened view for rendering: We map paths to dots.
     const [paths, setPaths] = useState<Point[][]>([[]]);
     const [activePathIndex, setActivePathIndex] = useState(0);
+    const [selectedView, setSelectedView] = useState<'front' | 'side'>('front');
 
     const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
     const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -53,6 +54,7 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
     const [selectedMetric, setSelectedMetric] = useState<MetricDefinition | null>(null);
     const [isScoreVisible, setIsScoreVisible] = useState(true);
+    const [isInstructionsVisible, setIsInstructionsVisible] = useState(true);
 
     // Flatten points for hit testing and rendering
     const allPoints = useMemo(() => paths.flat(), [paths]);
@@ -385,12 +387,16 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
         return null;
     }, [selectedMetric, stats, paths]);
 
+    const filteredMetrics = useMemo(() => {
+        return FREESTYLE_METRICS.filter(m => m.view === selectedView || m.view === 'both');
+    }, [selectedView]);
+
     return (
         <View style={styles.container}>
             <LinearGradient colors={['#0f0c29', '#302b63', '#24243e']} style={StyleSheet.absoluteFill} />
             <SafeAreaView style={styles.header} edges={['top']}>
                 <View style={styles.headerTitleContainer}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>FREE STYLE ({gender.toUpperCase()})</Text>
+                    <Text style={styles.headerTitle} numberOfLines={1}>FS({gender.toUpperCase()})</Text>
                     <Text style={styles.headerSubtitle}>
                         {allPoints.length} Points • {paths.length} Paths • Total: {Math.round(stats.totalDist)}
                     </Text>
@@ -464,7 +470,7 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                 </GestureDetector>
 
                 {/* Instruction Card */}
-                {selectedMetric && (
+                {selectedMetric && isInstructionsVisible && (
                     <View style={{
                         position: 'absolute',
                         bottom: 20,
@@ -477,8 +483,8 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                         borderWidth: 1,
                         borderColor: 'rgba(255,255,255,0.2)'
                     }}>
-                        <Text style={{ color: '#ccc', fontSize: 13, textAlign: 'center' }}>
-                            <Text style={{ fontWeight: 'bold', color: '#fff' }}>How to Map:</Text> {MEASUREMENT_INSTRUCTIONS[selectedMetric.id] || "Draw the feature lines/points."}
+                        <Text style={{ color: '#ccc', fontSize: 13, textAlign: 'center', fontFamily: 'FiraCode-Regular' }}>
+                            <Text style={{ fontWeight: 'bold', color: '#fff', fontFamily: 'FiraCode-Bold' }}>How to Map:</Text> {MEASUREMENT_INSTRUCTIONS[selectedMetric.id] || "Draw the feature lines/points."}
                         </Text>
                     </View>
                 )}
@@ -487,8 +493,12 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                 {selectedMetric && measuredValue !== null && isScoreVisible && (
                     <View style={styles.scoreCard}>
                         {(() => {
+                            if (!selectedMetric || measuredValue === null) return null;
+                            const mv = measuredValue as number;
+                            const m = selectedMetric;
+
                             // Special override for Facial Thirds with 3 segments
-                            if (selectedMetric.id === 'facial_thirds' && stats.segments.length === 3) {
+                            if (m.id === 'facial_thirds' && stats.segments.length === 3) {
                                 // Assuming order: Upper (0), Mid (1), Lower (2)
                                 const s1 = stats.segments[0].length;
                                 const s2 = stats.segments[1].length;
@@ -501,7 +511,7 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                                 return (
                                     <>
                                         <View style={styles.scoreRow}>
-                                            <Text style={styles.scoreTitle}>{selectedMetric.name}</Text>
+                                            <Text style={styles.scoreTitle}>{m.name}</Text>
                                             <Text style={[styles.tierBadge, {
                                                 backgroundColor: tier === 'Chad' ? '#00D4FF' :
                                                     (tier === 'CL') ? '#00E676' :
@@ -526,11 +536,11 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                             }
 
                             // Default scoring for other metrics
-                            const { score, tier, diff, idealRange } = calculateDeviationScore(measuredValue, selectedMetric, gender);
+                            const { score, tier, diff, idealRange } = calculateDeviationScore(mv, m, gender);
                             return (
                                 <>
                                     <View style={styles.scoreRow}>
-                                        <Text style={styles.scoreTitle}>{selectedMetric.name}</Text>
+                                        <Text style={styles.scoreTitle}>{m.name}</Text>
                                         <Text style={[styles.tierBadge, {
                                             backgroundColor: tier === 'Chad' ? '#00D4FF' :
                                                 (tier === 'CL') ? '#00E676' :
@@ -541,9 +551,9 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                                         }]}>{tier}</Text>
                                     </View>
                                     <Text style={styles.scoreValue}>
-                                        {selectedMetric.type === 'ratio' ? measuredValue.toFixed(2) :
-                                            selectedMetric.type === 'percentage' ? Math.round(measuredValue) + '%' :
-                                                Math.round(measuredValue) + '°'}
+                                        {m.type === 'ratio' ? mv.toFixed(2) :
+                                            m.type === 'percentage' ? Math.round(mv) + '%' :
+                                                Math.round(mv) + '°'}
                                     </Text>
                                     <Text style={styles.scoreDetail}>
                                         Ideal: {idealRange}
@@ -559,10 +569,36 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
                 )}
             </View>
 
+            {/* View Selector */}
+            <View style={styles.viewSelector}>
+                <Pressable
+                    style={[styles.viewTab, selectedView === 'front' && styles.viewTabActive]}
+                    onPress={() => {
+                        setSelectedView('front');
+                        setSelectedMetric(null);
+                        setPaths([[]]);
+                        setActivePathIndex(0);
+                    }}
+                >
+                    <Text style={[styles.viewTabText, selectedView === 'front' && styles.viewTabTextActive]}>FRONT</Text>
+                </Pressable>
+                <Pressable
+                    style={[styles.viewTab, selectedView === 'side' && styles.viewTabActive]}
+                    onPress={() => {
+                        setSelectedView('side');
+                        setSelectedMetric(null);
+                        setPaths([[]]);
+                        setActivePathIndex(0);
+                    }}
+                >
+                    <Text style={[styles.viewTabText, selectedView === 'side' && styles.viewTabTextActive]}>SIDE</Text>
+                </Pressable>
+            </View>
+
             {/* Metrics */}
             <View style={styles.metricSelectorContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.metricScroll}>
-                    {FREESTYLE_METRICS.map((m) => (
+                    {filteredMetrics.map((m) => (
                         <Pressable
                             key={m.id}
                             style={[styles.metricChip, selectedMetric?.id === m.id && styles.metricChipActive]}
@@ -578,9 +614,32 @@ export default function FreeStyleMapper({ imageUri, gender, onBack, onExit }: Fr
             </View>
 
             <View style={styles.footer}>
-                <Pressable onPress={onBack} style={styles.backButton}>
-                    <Text style={styles.backButtonText}>Back</Text>
-                </Pressable>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Pressable onPress={onBack} style={styles.backButton}>
+                        <Text style={styles.backButtonText}>Back</Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={() => setIsInstructionsVisible(!isInstructionsVisible)}
+                        style={{
+                            paddingVertical: 6,
+                            paddingHorizontal: 10,
+                            borderRadius: 8,
+                            backgroundColor: isInstructionsVisible ? 'rgba(0, 212, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                            borderColor: isInstructionsVisible ? '#00D4FF' : 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <Text style={{
+                            color: isInstructionsVisible ? '#00D4FF' : '#aaa',
+                            fontSize: 12,
+                            fontFamily: 'FiraCode-Medium'
+                        }}>
+                            Guide
+                        </Text>
+                    </Pressable>
+                </View>
                 <View style={styles.zoomControls}>
                     {[1, 2, 4].map((z) => (
                         <Pressable key={z} style={[styles.zoomButton, zoomLevel === z && styles.activeZoom]} onPress={() => handleZoom(z)}>
@@ -613,19 +672,31 @@ const styles = StyleSheet.create({
     zoomContainer: { width: '100%', height: '100%' },
     mainImage: { width: '100%', height: '100%' },
 
-    metricSelectorContainer: { height: 60, backgroundColor: 'rgba(0,0,0,0.8)', borderTopWidth: 1, borderTopColor: '#333' },
+    metricSelectorContainer: { height: 60, backgroundColor: 'rgba(15, 12, 41, 0.8)', borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.1)' },
     metricScroll: { alignItems: 'center', paddingHorizontal: 16, gap: 8 },
-    metricChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#222', borderWidth: 1, borderColor: '#444' },
-    metricChipActive: { backgroundColor: 'rgba(0, 212, 255, 0.2)', borderColor: '#00D4FF' },
+    metricChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+    metricChipActive: { backgroundColor: 'rgba(0, 212, 255, 0.15)', borderColor: '#00D4FF' },
     metricChipText: { color: '#888', fontSize: 12, fontFamily: 'FiraCode-Medium' },
     metricChipTextActive: { color: '#00D4FF' },
 
     scoreCard: { position: 'absolute', top: 60, left: 20, backgroundColor: 'rgba(0,0,0,0.9)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#00D4FF', minWidth: 200 },
-    scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-    scoreTitle: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-    tierBadge: { fontSize: 10, fontWeight: 'bold', color: '#000', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
+    scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    scoreTitle: { color: '#fff', fontWeight: 'bold', fontSize: 13, fontFamily: 'FiraCode-Bold', opacity: 0.9 },
+    tierBadge: {
+        fontSize: 9,
+        fontWeight: '900',
+        color: '#000',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 20,
+        overflow: 'hidden',
+        fontFamily: 'FiraCode-Bold',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase'
+    },
     scoreValue: { color: '#fff', fontSize: 24, fontWeight: 'bold', fontFamily: 'FiraCode-Bold' },
-    scoreDetail: { color: '#aaa', fontSize: 10, marginBottom: 8 },
+    scoreDetail: { color: '#aaa', fontSize: 10, marginBottom: 8, fontFamily: 'FiraCode-Regular' },
+    scoreSubtitle: { color: '#ccc', fontSize: 10, fontFamily: 'FiraCode-Regular', marginBottom: 2 },
     progressBar: { height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' },
     progressFill: { height: '100%' },
 
@@ -637,4 +708,32 @@ const styles = StyleSheet.create({
     activeZoom: { backgroundColor: '#00D4FF' },
     zoomText: { color: '#fff', fontFamily: 'FiraCode-Regular', fontSize: 12 },
     activeZoomText: { color: '#000', fontFamily: 'FiraCode-Bold' },
+
+    viewSelector: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(15, 12, 41, 0.9)', // Matches background dark blue
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        padding: 4,
+    },
+    viewTab: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 8,
+    },
+    viewTabActive: {
+        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+        borderBottomWidth: 2,
+        borderBottomColor: '#00D4FF',
+    },
+    viewTabText: {
+        color: '#666',
+        fontSize: 12,
+        fontFamily: 'FiraCode-Bold',
+        letterSpacing: 1,
+    },
+    viewTabTextActive: {
+        color: '#00D4FF',
+    },
 });
